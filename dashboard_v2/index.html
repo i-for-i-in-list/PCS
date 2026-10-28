@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prefix Cache Decision Workbench · Dashboard V3</title>
+    <script src="/js/theme.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <h1>Prefix Cache Workbench</h1>
+        </div>
+        <nav class="workspace-nav" role="tablist" aria-label="Workspace view" data-active-index="0">
+          <button id="exploreNav" class="active" type="button" role="tab" aria-selected="true" aria-controls="exploreView" data-workspace-target="explore">Explore</button>
+          <button id="recommendNav" type="button" role="tab" aria-selected="false" aria-controls="recommendView" data-workspace-target="recommend">Recommend</button>
+          <button id="experimentsNav" type="button" role="tab" aria-selected="false" aria-controls="experimentsView" data-workspace-target="experiments">Experiments</button>
+          <button id="kvSizeNav" type="button" role="tab" aria-selected="false" aria-controls="kvSizeView" data-workspace-target="kvSize">KV Size</button>
+          <button id="architectureNav" type="button" role="tab" aria-selected="false" aria-controls="architectureView" data-workspace-target="architecture">Architecture</button>
+        </nav>
+        <div class="toolbar-actions">
+          <label class="theme-control" for="themeSelect">Theme
+            <select id="themeSelect">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <section id="recommendView" class="workspace-view decision-view" role="tabpanel" aria-labelledby="recommendNav" hidden>
+        <div class="view-intro">
+          <div>
+            <p class="eyebrow">Decision workflow</p>
+            <h2>Find a design that covers the workload</h2>
+            <p>Define the envelope once. The workbench tests every compatible design against every sampled scenario, then explains the limiting resource.</p>
+          </div>
+          <span class="local-badge">Local · persisted · no telemetry</span>
+        </div>
+        <div class="decision-grid">
+          <aside class="recommend-form" aria-label="Recommendation controls">
+            <fieldset id="recommendControlsFieldset" class="recommend-controls-fieldset">
+            <section class="decision-card">
+              <div class="section-copy"><h2>1 · Design space</h2><p>Models, runtimes and storage profiles the recommendation may choose.</p></div>
+              <label>Analysis mode<select id="recommendAnalysisMode"><option value="bandwidth_envelope" selected>Bandwidth Envelope</option><option value="cache_replay">Cache Replay</option></select></label>
+              <div class="recommend-columns">
+                <fieldset class="recommend-model-fieldset">
+                  <legend>Models</legend>
+                  <div class="recommend-model-toolbar">
+                    <label class="visually-hidden" for="recommendModelSearch">Search recommendation models</label>
+                    <input id="recommendModelSearch" data-recommend-model-filter type="search" placeholder="Search models" spellcheck="false">
+                    <label class="visually-hidden" for="recommendModelFamily">Filter recommendation models by family</label>
+                    <select id="recommendModelFamily" data-recommend-model-filter><option value="">All families</option></select>
+                    <label class="visually-hidden" for="recommendModelFormula">Filter recommendation models by formula</label>
+                    <select id="recommendModelFormula" data-recommend-model-filter><option value="">All formulas</option></select>
+                    <label class="visually-hidden" for="recommendModelEvidence">Filter recommendation models by evidence</label>
+                    <select id="recommendModelEvidence" data-recommend-model-filter><option value="">All evidence</option></select>
+                    <button id="recommendSelectVisibleModels" class="link-button" type="button">Select visible</button>
+                  </div>
+                  <div id="recommendModelList" class="check-list compact-list recommendation-model-list"></div>
+                </fieldset>
+                <fieldset><legend>Runtimes</legend><div id="recommendRuntimeList" class="check-list compact-list"></div></fieldset>
+                <fieldset><legend>Storage</legend><div id="recommendStorageList" class="check-list compact-list"></div></fieldset>
+              </div>
+              <div class="two-col">
+                <label>block sizes<input id="recommendBlockSizesInput" type="text" value="256" spellcheck="false"></label>
+                <label>max IO bytes<input id="recommendMaxIoInput" type="text" value="131072" spellcheck="false"></label>
+              </div>
+            </section>
+
+            <section class="decision-card">
+              <div class="section-copy"><h2>2 · Workload envelope</h2><p>Choose a familiar traffic preset, then expand any coverage axis with comma-separated values.</p></div>
+              <label class="visually-hidden" for="recommendWorkloadSelect">Workload preset</label>
+              <select id="recommendWorkloadSelect" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+              <div id="recommendWorkloadCards" class="workload-preset-grid" role="radiogroup" aria-label="Workload preset"></div>
+              <div id="recommendWorkloadSummary" class="workload-profile-summary" aria-live="polite"></div>
+              <div id="recommendEncoderScenarios" class="encoder-scenarios" hidden></div>
+              <div class="field-group-heading">
+                <strong>Coverage axes</strong>
+                <span>Each comma-separated value adds sampled scenarios; every combination must be covered.</span>
+              </div>
+              <div class="two-col">
+                <label>Prompt length (tokens)<input id="recommendSeqLensInput" type="text" value="8192" spellcheck="false"><small>Input context tested per request.</small></label>
+                <label>Prefix ratio<input id="recommendHitRatesInput" type="text" value="0.7" spellcheck="false"><small>Fraction restored from a reusable prefix.</small></label>
+                <label>QPS<input id="recommendQpsInput" type="text" value="100" spellcheck="false"><small>Average requests arriving each second.</small></label>
+              </div>
+              <div class="field-group-heading">
+                <strong>Request generation</strong>
+                <span>Controls the size and popularity distribution of the finite synthetic request sample.</span>
+              </div>
+              <div class="two-col">
+                <label>Request count<input id="recommendRequestCountInput" type="number" min="0" step="1"><small>Number of generated requests in each case.</small></label>
+                <label>Generation length<input id="recommendGenerationLenInput" type="number" min="0" step="1"><small>Output tokens at the first-token boundary.</small></label>
+                <label>Prefix groups<input id="recommendPrefixGroupCountInput" type="number" min="1" step="1"><small>Distinct reusable prefix identities.</small></label>
+                <label>Zipf alpha<input id="recommendZipfInput" type="number" min="0" step="0.01"><small>Higher values concentrate traffic on popular prefixes.</small></label>
+                <label>Seed<input id="recommendSeedInput" type="number" step="1"><small>Reproduces the same request sample.</small></label>
+                <label>Workload shape<select id="recommendWorkloadShape"><option value="shared_prefix_groups">Shared prefix groups</option><option value="prompt_lineage_bootstrap">Prompt lineage bootstrap</option></select></label>
+                <label id="recommendCacheCapacityField">Cache capacity GiB<input id="recommendCacheCapacityGiB" type="number" min="0" step="any" value="1024"></label>
+              </div>
+              <div id="recommendLifecyclePreview" class="cache-lifecycle-preview" hidden></div>
+              <div class="inline-options" role="group" aria-label="Recommendation arrival model">
+                <label><input id="recommendArrivalFixed" type="checkbox" checked> fixed</label>
+                <label><input id="recommendArrivalPoisson" type="checkbox"> poisson</label>
+                <label><input id="recommendWriteMisses" type="checkbox" checked> write misses</label>
+              </div>
+              <details class="modeling-policy-disclosure">
+                <summary><strong>Modeling policies</strong><small>Checkpoint, sparse, draft and decode scenarios</small></summary>
+                <div class="two-col modeling-policy-grid">
+                  <label>Footprint view<select id="recommendFootprintView"><option value="calculator-reference">Calculator reference</option><option value="active-execution">Active execution</option><option value="prefix-store" selected>Prefix Store</option><option value="replay-resident">Replay resident</option></select></label>
+                  <label>Recovery assumption<select id="recommendRecoveryAssumption"><option value="model_default">Model default</option><option value="assume_exact_at_resident">Exact at resident</option><option value="periodic">Periodic checkpoint</option><option value="none">No checkpoint state</option></select></label>
+                  <label>Checkpoint interval<input id="recommendCheckpointInterval" type="number" min="1" step="1" value="2048"></label>
+                  <label class="checkbox-line"><input id="recommendRetainPromptEnd" type="checkbox"> retain prompt-end checkpoint</label>
+                  <label>Sparse restore<select id="recommendSparseRestore"><option value="full_restore">Full restore</option><option value="sparse_on_demand">Sparse on demand</option></select></label>
+                  <label>Sparse locality<select id="recommendSparseLocality"><option value="clustered_lower">Clustered lower</option><option value="window_global" selected>Window/global</option><option value="seeded_uniform">Seeded uniform</option><option value="dispersed_upper">Dispersed upper</option></select></label>
+                  <label>Reuse scope<select id="recommendSparseReuse"><option value="request_union">Request union</option><option value="per_query_no_reuse">Per query, no reuse</option></select></label>
+                  <label>Storage layout<select id="recommendSparseLayout"><option value="all_kv_heads_together">All KV heads together</option><option value="per_gqa_group">Per GQA group</option></select></label>
+                  <label>Query chunk<input id="recommendSparseQueryChunk" type="number" min="1" step="1" value="1"></label>
+                  <label>Sparse seed<input id="recommendSparseSeed" type="number" step="1" value="0"></label>
+                  <label>Draft execution<select id="recommendDraftExecution"><option value="disabled">Disabled</option><option value="prefill">Prefill</option></select></label>
+                  <label>Decode step (µs/token)<input id="recommendDecodeStep" type="number" min="0" step="any" placeholder="burst"></label>
+                </div>
+                <div id="recommendStatePolicyEditor" class="state-policy-editor"></div>
+                <div class="inline-options">
+                  <label><input id="recommendDraftCache" type="checkbox"> include draft cache</label>
+                  <label><input id="recommendDecodeWrites" type="checkbox"> decode KV/state writes</label>
+                </div>
+              </details>
+            </section>
+
+            <section class="decision-card">
+              <div class="section-copy"><h2>3 · Constraints & objective</h2><p>Effective Storage limits are shown as numbers. Enable Custom only when every candidate should use the same override.</p></div>
+              <label class="checkbox-line"><input id="recommendUseStorageLimits" type="checkbox" checked> Use Storage limits</label>
+              <div class="constraint-grid">
+                <div class="constraint-item" data-constraint-id="constraintRead">
+                  <div class="constraint-title"><span>Read GB/s ≤</span><label><input id="constraintReadCustom" type="checkbox" data-constraint-custom="constraintRead"> Custom</label></div>
+                  <output id="constraintReadEffective" class="constraint-effective">–</output>
+                  <input id="constraintRead" type="number" min="0" step="any" aria-label="Custom average read GB per second limit" hidden disabled>
+                  <div id="constraintReadBreakdown" class="constraint-breakdown"></div>
+                </div>
+                <div class="constraint-item" data-constraint-id="constraintWrite">
+                  <div class="constraint-title"><span>Write GB/s ≤</span><label><input id="constraintWriteCustom" type="checkbox" data-constraint-custom="constraintWrite"> Custom</label></div>
+                  <output id="constraintWriteEffective" class="constraint-effective">–</output>
+                  <input id="constraintWrite" type="number" min="0" step="any" aria-label="Custom average write GB per second limit" hidden disabled>
+                  <div id="constraintWriteBreakdown" class="constraint-breakdown"></div>
+                </div>
+                <div class="constraint-item" data-constraint-id="constraintMissWindow">
+                  <div class="constraint-title"><span>Dependency GB/s ≤</span><label><input id="constraintMissWindowCustom" type="checkbox" data-constraint-custom="constraintMissWindow"> Custom</label></div>
+                  <output id="constraintMissWindowEffective" class="constraint-effective">–</output>
+                  <input id="constraintMissWindow" type="number" min="0" step="any" aria-label="Custom miss-window GB per second limit" hidden disabled>
+                  <div id="constraintMissWindowBreakdown" class="constraint-breakdown"></div>
+                </div>
+                <div class="constraint-item" data-constraint-id="constraintIops">
+                  <div class="constraint-title"><span>Dependency IOPS ≤</span><label><input id="constraintIopsCustom" type="checkbox" data-constraint-custom="constraintIops"> Custom</label></div>
+                  <output id="constraintIopsEffective" class="constraint-effective">–</output>
+                  <input id="constraintIops" type="number" min="0" step="any" aria-label="Custom p99 read IOPS limit" hidden disabled>
+                  <div id="constraintIopsBreakdown" class="constraint-breakdown"></div>
+                </div>
+                <div class="constraint-item" data-constraint-id="constraintCapacity">
+                  <div class="constraint-title"><span>Capacity GiB ≤</span><label><input id="constraintCapacityCustom" type="checkbox" data-constraint-custom="constraintCapacity"> Custom</label></div>
+                  <output id="constraintCapacityEffective" class="constraint-effective">–</output>
+                  <input id="constraintCapacity" type="number" min="0" step="any" aria-label="Custom retain-all capacity GiB limit" hidden disabled>
+                  <div id="constraintCapacityBreakdown" class="constraint-breakdown"></div>
+                </div>
+                <div class="constraint-item ttft-constraint">
+                  <div class="constraint-title"><span>Dependency TTFT saving ≥</span><label><input id="constraintTtftEnabled" type="checkbox" checked> Enabled</label></div>
+                  <label class="unit-input"><input id="constraintTtft" type="number" step="any" value="0" aria-label="Minimum TTFT hidden budget in milliseconds"><span>ms</span></label>
+                  <small>0 ms requires a non-negative first-token restore window.</small>
+                </div>
+              </div>
+              <label>Ranking objective<select id="recommendObjective"></select></label>
+              <div class="recommend-method" aria-labelledby="recommendMethodTitle">
+                <strong id="recommendMethodTitle">How recommendation works</strong>
+                <ol>
+                  <li>Remove incompatible model, runtime and block combinations.</li>
+                  <li>Build every seq × hit × arrival × QPS scenario.</li>
+                  <li>Require every active constraint to pass per scenario.</li>
+                  <li>Rank exact sampled coverage and margins using the selected objective.</li>
+                </ol>
+                <p id="recommendMath">Calculating the current grid…</p>
+                <p class="boundary-note"><strong>Two recommendation modes</strong> Envelope ranks isolated recovery requirements; Cache Replay adds workload, capacity, eviction and aggregate dependency pressure.</p>
+              </div>
+            </section>
+            </fieldset>
+
+            <div class="recommend-runbar">
+              <button id="runRecommendationButton" class="primary-button" type="button">Recommend a design</button>
+              <button id="cancelRecommendationButton" type="button" hidden>Cancel</button>
+              <span id="recommendCaseEstimate">Estimate unavailable</span>
+            </div>
+            <p id="recommendStatus" class="status-text" role="status">Loading design space…</p>
+          </aside>
+
+          <main class="recommend-results">
+            <section id="recommendEmpty" class="recommend-empty">
+              <span class="panel-label">Reusable decision record</span>
+              <h2>Start with the workload, not a guessed configuration.</h2>
+              <p>The result ranks compatible designs, records what failed, and remains available in Experiments for future comparison.</p>
+              <ol>
+                <li>Describe the traffic and prefix-ratio samples you need to cover.</li>
+                <li>Keep Storage defaults or provide explicit engineering limits.</li>
+                <li>Inspect the recommended candidate in the existing scientific charts.</li>
+              </ol>
+            </section>
+            <section id="recommendResult" class="recommend-result" hidden>
+              <div id="recommendDecisionBanner" class="result-state-banner" role="status" hidden></div>
+              <div id="recommendHistoryWarning" class="result-state-banner" hidden></div>
+              <div class="recommend-hero">
+                <div><span id="recommendedDesignLabel" class="panel-label">Recommended design</span><h2 id="recommendedDesign">–</h2><p id="recommendedContext">–</p></div>
+                <button id="openRecommendationInExplore" class="primary-button" type="button">Open in Explore</button>
+              </div>
+              <div id="recommendMetricGrid" class="recommend-metrics"></div>
+              <section class="decision-card why-card">
+                <div class="panel-heading"><div><span class="panel-label">Decision evidence</span><h2>Why this design</h2><p>Worst observed resource and TTFT boundaries for the selected candidate.</p></div></div>
+                <div id="recommendWhyEvidence" class="why-evidence"></div>
+              </section>
+              <section class="decision-card">
+                <div class="panel-heading"><div><span class="panel-label">Ranked shortlist</span><h2>Top candidates</h2><p>Exact sampled coverage; no interpolated feasibility threshold.</p></div></div>
+                <div id="recommendCandidateTable" class="candidate-table"></div>
+              </section>
+              <section class="decision-card">
+                <div class="panel-heading"><div><span class="panel-label">Boundary evidence</span><h2>Sampled prefix-ratio intervals</h2><p id="recommendBoundaryCaption">Select a candidate.</p></div></div>
+                <div id="recommendBoundaries" class="boundary-list"></div>
+              </section>
+            </section>
+          </main>
+        </div>
+      </section>
+
+      <div id="exploreView" class="workbench workspace-view" role="tabpanel" aria-labelledby="exploreNav">
+        <aside class="control-panel" aria-label="Sweep controls">
+          <div class="control-title">
+            <div><span>Experiment setup</span><strong>Explore console</strong></div>
+            <div class="control-title-actions">
+              <div class="explore-mode-toggle" role="group" aria-label="Explore control mode">
+                <button id="simpleModeButton" class="active" type="button" aria-pressed="true">Simple</button>
+                <button id="expertModeButton" type="button" aria-pressed="false">Expert</button>
+              </div>
+              <span id="advancedOverrideBadge" class="advanced-override-badge" hidden>Advanced overrides active</span>
+            </div>
+            <div class="case-run-summary" aria-live="polite">
+              <div class="case-run-copy">
+                <span id="caseEstimate" class="case-estimate">– cases</span>
+                <span id="caseFormula" class="case-formula">Waiting for valid axes.</span>
+              </div>
+              <div class="case-run-actions">
+                <button id="runButton" class="primary-button" type="button">Run Sweep</button>
+                <button id="cancelSweepButton" type="button" hidden>Cancel Sweep</button>
+              </div>
+            </div>
+          </div>
+
+          <section class="panel-section preset-section">
+            <div class="section-title-row">
+              <div class="section-copy"><h2>Starting point</h2><p>Use a fast comparison or the full high-hit tail.</p></div>
+            </div>
+            <div class="preset-buttons" role="group" aria-label="Sweep preset">
+              <button id="quickPresetButton" class="active" type="button">Quick Compare</button>
+              <button id="fullPresetButton" type="button">Full Tail</button>
+            </div>
+            <label>Analysis mode
+              <select id="analysisModeSelect">
+                <option value="bandwidth_envelope" selected>Bandwidth Envelope</option>
+                <option value="cache_replay">Cache Replay</option>
+              </select>
+              <small id="analysisModeHelp">Assume a resident prefix and calculate isolated restore boundaries.</small>
+            </label>
+            <span id="customPresetBadge" class="custom-preset-badge" hidden>Custom axes</span>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-copy"><h2>Scenario</h2><p>Set the effective compute throughput for this sweep.</p></div>
+            <select id="runtimeSelect" hidden></select>
+            <label>Compute (TFLOPS)<input id="computeTflopsInput" type="number" min="0" step="any" value="2000"><small>Normalized effective compute throughput.</small></label>
+            <label class="expert-only">Reference storage<select id="storageSelect"></select><small>Used only for device proxies and interactive SSD simulation.</small></label>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title-row">
+              <div class="section-copy"><h2>Models</h2><p>Compare selected model and attention layouts.</p></div>
+              <button id="openModelDialogButton" type="button">Change models</button>
+            </div>
+            <div id="selectedModelSummary" class="selected-model-summary" aria-live="polite"></div>
+
+            <dialog id="modelDialog" class="model-dialog" aria-labelledby="modelDialogTitle">
+              <div class="model-dialog-header">
+                <div><span class="panel-label">Model catalog</span><h2 id="modelDialogTitle">Choose models to compare</h2><p>Selected models stay selected when filters change.</p></div>
+                <button id="closeModelDialogButton" type="button" aria-label="Close model catalog">Close</button>
+              </div>
+              <div class="model-filter-toolbar">
+                <label class="visually-hidden" for="modelSearchInput">Search models</label>
+                <input id="modelSearchInput" type="search" placeholder="Search models" spellcheck="false">
+                <label class="visually-hidden" for="modelFamilyFilter">Filter by family</label>
+                <select id="modelFamilyFilter"><option value="">All families</option></select>
+                <label class="visually-hidden" for="modelFormulaFilter">Filter by formula</label>
+                <select id="modelFormulaFilter"><option value="">All formulas</option></select>
+                <label class="visually-hidden" for="modelEvidenceFilter">Filter by evidence</label>
+                <select id="modelEvidenceFilter"><option value="">All evidence</option></select>
+              </div>
+              <div id="modelList" class="check-list model-scroll-list"></div>
+              <div class="model-dialog-footer">
+                <span id="modelDialogSelectionCount">0 selected</span>
+                <button id="selectAllModelsButton" type="button">Select visible</button>
+                <button id="modelDialogDoneButton" class="primary-button" type="button">Done</button>
+              </div>
+            </dialog>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-copy"><h2>Comparison points</h2><p>Comma-separated values create the sweep axes.</p></div>
+            <label>Context lengths<input id="seqLensInput" type="text" spellcheck="false"><small>Tokens, for example 32768 or 32768, 65536.</small></label>
+            <label>Prefix hit rates<input id="hitRatesInput" type="text" spellcheck="false"><small>Use percentages or ratios: 50%, 95%, 99.9% or 0.5, 0.95, 0.999.</small></label>
+            <label class="expert-only">Block sizes<input id="blockSizesInput" type="text" spellcheck="false"></label>
+            <label class="expert-only">Max IO bytes<input id="maxIoInput" type="text" spellcheck="false"></label>
+            <div class="inline-options expert-only" role="group" aria-label="arrival_model">
+              <label><input id="arrivalFixed" type="checkbox" value="fixed" checked> fixed</label>
+              <label><input id="arrivalPoisson" type="checkbox" value="poisson"> poisson</label>
+            </div>
+            <p id="validationText" class="field-message" role="alert"></p>
+          </section>
+
+          <section id="workloadSection" class="panel-section">
+            <div class="section-copy"><h2>Workload behavior</h2><p>Configure the request stream used by Cache Replay. Persisting miss-created blocks affects write demand.</p></div>
+            <label class="checkbox-line"><input id="writeMissBlocksInput" type="checkbox" checked> Persist blocks created by misses</label>
+            <div class="two-col">
+              <label>Request count<input id="requestCountInput" type="number" min="0" step="1"></label>
+              <label><span>QPS <small>· requests/s</small></span><input id="qpsInput" type="number" min="0.001" step="0.001"></label>
+              <label class="workload-generation-field">Generation length<input id="generationLenInput" type="number" min="0" step="1" aria-describedby="generationLenUnit decodeNotice"><small id="generationLenUnit">tokens/request</small></label>
+              <label class="expert-only">Prefix groups<input id="prefixGroupCountInput" type="number" min="1" step="1"></label>
+              <label class="expert-only">Zipf alpha<input id="prefixZipfAlphaInput" type="number" min="0" step="0.01"></label>
+              <label class="expert-only">Seed<input id="seedInput" type="number" step="1"></label>
+              <label class="expert-only workload-shape-field">Workload shape<select id="workloadShapeSelect"><option value="shared_prefix_groups">Shared prefix groups</option><option value="prompt_lineage_bootstrap">Prompt lineage bootstrap</option></select></label>
+            </div>
+            <div id="decodeNotice" class="boundary-note expert-only">
+              <strong>Decode boundary</strong>
+              Optional decode KV/state writes cover generated objects, checkpoints, and partial-tail rewrites. They do not model full TPOT, continuous batching, or per-token kernel latency.
+            </div>
+          </section>
+
+          <section class="panel-section cache-control-section">
+            <details id="cacheReplayDisclosure" open>
+              <summary>
+                <span><strong>Prefix Cache Replay</strong><small>capacity-aware radix leaf-LRU</small></span>
+                <label class="switch-line cache-enable-line expert-only" onclick="event.stopPropagation()"><input id="cacheReplayToggle" type="checkbox"> Enable</label>
+              </summary>
+              <fieldset id="cacheReplayFields" disabled>
+                <label>Capacity axis (GiB)<input id="cacheCapacityGiBInput" type="text" value="1024" spellcheck="false"><small>Comma-separated binary GiB; 0 is a distinct no-residency case.</small></label>
+                <div class="expert-only">
+                  <label>Cache preset<select id="cacheConfigSelect"></select></label>
+                </div>
+                <div class="two-col expert-only">
+                  <label>Shard count<input id="cacheShardCountInput" type="number" min="1" step="1" value="1"></label>
+                  <label>Placement seed<input id="cachePlacementSeedInput" type="number" step="1" value="0"></label>
+                  <label>Warmup fraction<input id="cacheWarmupFractionInput" type="number" min="0" max="0.999999" step="0.01" value="0"></label>
+                  <label>Policy<output id="cachePolicyValue" class="readonly-value">radix_leaf_lru</output></label>
+                </div>
+                <p id="cacheValidationText" class="field-message expert-only" role="alert"></p>
+                <div id="cacheLifecyclePreview" class="cache-lifecycle-preview expert-only"></div>
+                <div class="boundary-note expert-only"><strong>Replay semantics</strong> Configured, object-shareable, resident and recoverable prefixes are reported separately. Residency follows longest-prefix lookup, in-flight protection and leaf-LRU eviction.</div>
+              </fieldset>
+            </details>
+          </section>
+
+          <section id="recoveryScenarioSection" class="panel-section modeling-control-section">
+            <div class="section-copy"><h2>Recovery scenario</h2><p id="recoveryScenarioHelp">Stateful models need a checkpoint at or before the cached boundary.</p></div>
+            <label>Scenario<select id="recoveryAssumptionSelect"><option value="model_default">Model defaults</option><option value="periodic">Periodic checkpoints</option><option value="assume_exact_at_resident">Ideal boundary (upper bound)</option><option value="none" data-expert-option>No checkpoint state</option></select></label>
+            <label id="checkpointIntervalField">Checkpoint interval<input id="checkpointIntervalInput" type="number" min="1" step="1" value="2048"></label>
+            <label id="retainPromptEndField" class="checkbox-line expert-only"><input id="retainPromptEndInput" type="checkbox"> Retain prompt-end checkpoint</label>
+            <div id="encoderScenarios" class="encoder-scenarios" hidden></div>
+            <div id="stateCapabilitySummary" class="boundary-note">Pure KV models ignore checkpoint controls. Stateful models use the latest common resident state boundary.</div>
+
+            <div id="recoveryPreflight" class="recovery-preflight" role="note" hidden>
+              <strong id="recoveryPreflightTitle">Partial prefix hits cannot resume</strong>
+              <p id="recoveryPreflightBody"></p>
+              <div class="recovery-preflight-actions">
+                <button id="preflightKeepDefault" type="button">Keep model defaults</button>
+                <button id="preflightPeriodic" type="button">Use periodic 2048</button>
+                <button id="preflightExact" type="button">Use ideal boundary</button>
+                <button id="preflightAddFullHit" type="button">Add 100% control point</button>
+              </div>
+              <small>Adding a full-hit control tests prompt-end recovery; it does not make other partial-hit points resumable.</small>
+            </div>
+
+            <details id="modelingPolicyDisclosure" class="expert-only">
+              <summary><span><strong>Advanced modeling policies</strong><small>sparse restore, draft, decode, and per-state overrides</small></span></summary>
+              <div class="two-col modeling-policy-grid">
+                <label>Footprint view<select id="footprintViewSelect"><option value="calculator-reference">Calculator reference</option><option value="active-execution">Active execution</option><option value="prefix-store">Prefix Store</option><option value="replay-resident">Replay resident</option></select></label>
+                <label>Sparse restore<select id="sparseRestoreSelect"><option value="full_restore">Full restore</option><option value="sparse_on_demand">Sparse on demand</option></select></label>
+                <label>Sparse locality<select id="sparseLocalitySelect"><option value="clustered_lower">Clustered lower</option><option value="window_global">Window/global</option><option value="seeded_uniform">Seeded uniform</option><option value="dispersed_upper">Dispersed upper</option></select></label>
+                <label>Reuse scope<select id="sparseReuseSelect"><option value="request_union">Request union</option><option value="per_query_no_reuse">Per query, no reuse</option></select></label>
+                <label>Storage layout<select id="sparseLayoutSelect"><option value="all_kv_heads_together">All KV heads together</option><option value="per_gqa_group">Per GQA group</option></select></label>
+                <label>Query chunk<input id="sparseQueryChunkInput" type="number" min="1" step="1" value="1"></label>
+                <label>Sparse seed<input id="sparseSeedInput" type="number" step="1" value="0"></label>
+                <label>Draft execution<select id="draftExecutionSelect"><option value="disabled">Disabled</option><option value="prefill">Prefill</option></select></label>
+                <label>Decode step (µs/token)<input id="decodeWriteStepInput" type="number" min="0" step="any" placeholder="burst at completion"></label>
+              </div>
+              <div id="statePolicyEditor" class="state-policy-editor"></div>
+              <div class="inline-options">
+                <label><input id="includeDraftCacheInput" type="checkbox"> Include draft cache</label>
+                <label><input id="decodeStateWritesInput" type="checkbox"> Decode KV/state writes</label>
+              </div>
+              <div class="boundary-note"><strong>Evidence boundary</strong>Full restore is the common smoke baseline. Sparse locality, low-bit serialization and burst decode remain explicit scenarios unless the selected model/runtime supplies stronger evidence.</div>
+            </details>
+          </section>
+          <p id="statusText" class="status-text" role="status">Ready.</p>
+        </aside>
+
+        <main class="main-panel">
+          <section id="resultStateBanner" class="result-state-banner" role="status" hidden></section>
+
+          <section class="explore-result-toolbar" aria-label="Explore results navigation">
+            <div class="explore-result-tabs" role="tablist" aria-label="Explore result views">
+              <button id="exploreChartsTab" class="active" role="tab" aria-selected="true" aria-controls="exploreChartsPanel" data-result-view="charts" type="button">Charts</button>
+              <button id="exploreCacheTab" role="tab" aria-selected="false" aria-controls="exploreCachePanel" data-result-view="cache" type="button" hidden>Cache</button>
+              <button id="exploreCasesTab" role="tab" aria-selected="false" aria-controls="exploreCasesPanel" data-result-view="cases" type="button">Cases</button>
+            </div>
+            <div class="result-export-actions" aria-label="Export sweep results">
+              <button id="exportJsonButton" type="button" disabled>Export JSON</button>
+              <button id="exportCsvButton" type="button" disabled>Export CSV</button>
+            </div>
+          </section>
+
+          <div id="selectedCaseBar" class="selected-case-bar result-selection-bar" hidden>
+            <span id="selectedCaseSummary">No case selected.</span>
+            <div>
+              <button id="showInTableButton" type="button">Show in table</button>
+              <button id="openDetailsButton" type="button">Open details</button>
+            </div>
+          </div>
+
+          <section id="exploreChartsPanel" class="explore-result-panel" role="tabpanel" aria-labelledby="exploreChartsTab" data-result-panel="charts">
+            <section class="chart-panel">
+              <div class="chart-header">
+                <div class="chart-title"><span class="panel-label">Primary canvas</span><h2 id="chartTitle">Sweep Curves</h2><p id="chartCaption">Run a Sweep to display sensitivity curves.</p></div>
+                <div class="chart-tools">
+                  <div class="segmented-control" role="tablist" aria-label="Chart metric">
+                    <button id="metricBandwidthTab" class="metric-tab active" role="tab" aria-controls="chartFrame" aria-selected="true" data-metric="optimistic_overlap_GBps_p99" type="button">Bandwidth</button>
+                    <button id="metricReadTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric="read_avg_GBps" type="button">Read</button>
+                    <button id="metricWriteTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric="write_avg_GBps" type="button">Write</button>
+                    <button id="metricIopsTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric="aggregate_dependency_chunked_iops" type="button">IOPS</button>
+                    <button id="metricTtftTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric="dependency_ttft_savings_us_p50" type="button">TTFT</button>
+                    <button id="metricCapacityTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric-group="capacity" type="button">Capacity</button>
+                    <button id="metricRecoveryTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric-group="recovery" type="button">Recovery / Hits</button>
+                    <button id="metricComputeTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric-group="compute" type="button">Compute</button>
+                    <button id="metricPeakTab" class="metric-tab" role="tab" aria-controls="chartFrame" aria-selected="false" data-metric-group="peak" type="button">Peak pressure</button>
+                  </div>
+                  <div id="metricGroupControls" class="chart-switches metric-group-controls" hidden>
+                    <label>Metric<select id="groupMetricSelect" aria-describedby="metricAvailability"></select></label>
+                    <label id="peakWindowControl" hidden>Window<select id="peakWindowSelect"><option value="1ms">1 ms</option><option value="10ms">10 ms</option><option value="100ms">100 ms</option><option value="1s">1 s</option></select></label>
+                  </div>
+                  <div class="chart-switches">
+                    <label>View<select id="viewModeSelect"><option value="curves">Curves</option><option value="heatmap">Heatmap</option></select></label>
+                    <label>X axis<select id="xModeSelect"><option value="hit-linear">Prefix Ratio</option><option value="miss-log">Miss Ratio Log</option><option value="cache-capacity">Cache Capacity</option><option value="context-length">Context Length</option></select></label>
+                    <label id="smoothGuideControl" class="switch-line"><input id="smoothGuidesToggle" type="checkbox"> Smooth guide</label>
+                    <label class="switch-line"><input id="thresholdToggle" type="checkbox"> Device proxy</label>
+                  </div>
+                </div>
+              </div>
+
+              <section id="riskStrip" class="risk-strip chart-risk-strip" aria-label="Result status counts"></section>
+
+              <div class="metric-description" role="note">
+                <span class="metric-description-label">What this chart shows</span>
+                <p id="metricDescription" aria-live="polite">Bandwidth required to hide blocking restore behind replay plus suffix compute under the optimistic overlap bound.</p>
+                <p id="metricAvailability" class="metric-availability" aria-live="polite" hidden></p>
+              </div>
+
+              <div id="heatmapFilters" class="heatmap-filters" hidden>
+                <span>Heatmap slice</span>
+                <label>Model<select id="heatmapModelSelect"></select></label>
+                <label id="heatmapEncoderStateControl" hidden>Encoder state<select id="heatmapEncoderStateSelect"></select></label>
+                <label id="heatmapEncoderTailControl" hidden>Encoder output<select id="heatmapEncoderTailSelect"></select></label>
+                <label>Block<select id="heatmapBlockSelect"></select></label>
+                <label>Arrival<select id="heatmapArrivalSelect"></select></label>
+                <label>Max IO<select id="heatmapIoSelect"></select></label>
+                <label id="heatmapCacheCapacityControl" hidden>Cache GiB<select id="heatmapCacheCapacitySelect"></select></label>
+                <label>Color scale<select id="heatmapScaleSelect"><option value="global">Global</option><option value="local">Local</option></select></label>
+              </div>
+
+              <div class="chart-layout">
+                <div id="chartFrame" class="chart-frame" role="tabpanel" aria-labelledby="metricBandwidthTab" aria-describedby="chartCaption metricDescription" aria-live="polite"></div>
+                <aside class="legend-panel" aria-label="Chart series legend">
+                  <div class="legend-actions">
+                    <button id="legendShowAll" type="button">Show all</button>
+                    <button id="legendHideAll" type="button">Hide all</button>
+                  </div>
+                  <div id="chartLegend" class="chart-legend"></div>
+                </aside>
+              </div>
+              <p id="thresholdNote" class="proxy-note" hidden>The dashed line is the selected storage profile's nominal sizing proxy, not simulated achievable throughput or an SLA.</p>
+            </section>
+
+            <section id="summaryGrid" class="metric-grid" aria-label="Summary metrics"></section>
+          </section>
+
+          <section id="exploreCachePanel" class="explore-result-panel" role="tabpanel" aria-labelledby="exploreCacheTab" data-result-panel="cache" hidden>
+            <section id="cachePanel" class="cache-panel" aria-labelledby="cachePanelTitle" hidden>
+              <div class="panel-heading">
+                <div><span class="panel-label">Capacity-aware replay</span><h2 id="cachePanelTitle">Prefix Cache</h2><p id="cachePanelCaption">Actual resident-prefix outcomes across configured capacities.</p></div>
+              </div>
+              <div id="cacheSummaryGrid" class="cache-summary-grid"></div>
+              <div class="cache-chart-grid">
+                <article class="cache-chart-card">
+                  <div><h3>Resident prefix vs capacity</h3><p>Configured, shareable and recovery boundaries remain visible for comparison.</p></div>
+                  <div id="cacheHitChart" class="cache-chart" aria-label="Actual cache hit rate by capacity"></div>
+                </article>
+                <article class="cache-chart-card">
+                  <div><h3>Cache churn vs capacity</h3><p>Logical eviction, immediate self-eviction and rejected admission bytes.</p></div>
+                  <div id="cacheChurnChart" class="cache-chart" aria-label="Cache churn bytes by capacity"></div>
+                </article>
+              </div>
+            </section>
+          </section>
+
+          <section id="exploreCasesPanel" class="explore-result-panel" role="tabpanel" aria-labelledby="exploreCasesTab" data-result-panel="cases" hidden>
+            <section class="results-panel">
+              <div class="panel-heading">
+                <div><span class="panel-label">Case matrix</span><h2>Sweep Cases</h2><p id="tableCaption">No cases yet.</p></div>
+                <input id="tableFilter" type="search" placeholder="Filter rows" aria-label="Filter case table">
+              </div>
+              <div id="resultsTable"></div>
+            </section>
+
+            <section id="exploreInspectorPanel" class="detail-panel case-inspector-panel" role="region" aria-label="Selected Case inspector">
+              <div class="panel-heading">
+                <div><span class="panel-label">Inspector</span><h2>Selected Case</h2><p id="detailCaption">Select a chart point, heatmap cell, or table row.</p></div>
+                <button id="runStorageButton" type="button" disabled>Run SSD Simulation</button>
+              </div>
+              <div class="detail-tabs" role="tablist" aria-label="Case details">
+                <button id="detailOverviewTab" role="tab" aria-controls="detailContent" aria-selected="true" data-detail-tab="overview" type="button">Overview</button>
+                <button id="detailRecoveryTab" role="tab" aria-controls="detailContent" aria-selected="false" data-detail-tab="recovery" type="button">Recovery</button>
+                <button id="detailComponentsTab" role="tab" aria-controls="detailContent" aria-selected="false" data-detail-tab="components" type="button">Components</button>
+                <button id="detailTimingTab" role="tab" aria-controls="detailContent" aria-selected="false" data-detail-tab="timing" type="button">Timing</button>
+                <button id="detailCacheTab" role="tab" aria-controls="detailContent" aria-selected="false" data-detail-tab="cache" type="button" hidden>Cache</button>
+                <button id="detailRawTab" role="tab" aria-controls="detailContent" aria-selected="false" data-detail-tab="raw" type="button">Raw JSON</button>
+              </div>
+              <div id="detailContent" class="detail-content" role="tabpanel" aria-labelledby="detailOverviewTab" tabindex="-1">
+                <div class="empty-state">Select a chart point, heatmap cell, or table row.</div>
+              </div>
+            </section>
+          </section>
+        </main>
+      </div>
+
+      <section id="experimentsView" class="workspace-view experiments-view" role="tabpanel" aria-labelledby="experimentsNav" hidden>
+        <div class="view-intro">
+          <div><p class="eyebrow">Local experiment repository</p><h2>Reopen evidence, pin decisions, compare conservatively</h2><p>Only identical normalized Case payloads receive metric deltas. Different designs remain Added or Removed.</p></div>
+          <button id="refreshExperimentsButton" type="button">Refresh</button>
+        </div>
+        <div class="experiment-controls decision-card">
+          <label>Kind<select id="experimentKindFilter"><option value="">All</option><option value="sweep">Sweep</option><option value="recommendation">Recommendation</option></select></label>
+          <label>Search<input id="experimentSearch" type="search" placeholder="Experiment name"></label>
+          <label class="checkbox-line"><input id="experimentPinnedFilter" type="checkbox"> Pinned only</label>
+        </div>
+        <div class="experiments-grid">
+          <section class="decision-card experiment-list-card">
+            <div class="panel-heading"><div><span class="panel-label">Saved runs</span><h2>Experiments</h2><p id="experimentListCaption">Loading…</p></div></div>
+            <div class="experiment-selection-toolbar">
+              <label class="checkbox-line"><input id="selectAllExperiments" type="checkbox"> Select all</label>
+              <span id="experimentSelectionCount">0 selected</span>
+              <button id="deleteSelectedExperiments" class="danger-button" type="button" disabled>Delete selected</button>
+            </div>
+            <div id="experimentList" class="experiment-list"></div>
+          </section>
+          <section class="decision-card compare-card">
+            <div class="panel-heading"><div><span class="panel-label">Conservative diff</span><h2>Compare two runs</h2><p>Request, summary and exact Case matches only.</p></div></div>
+            <div class="compare-controls">
+              <label>Baseline<select id="compareBaseline"></select></label>
+              <label>Candidate<select id="compareCandidate"></select></label>
+              <button id="compareExperimentsButton" type="button">Compare</button>
+            </div>
+            <div id="compareResult" class="compare-result"><div class="empty-state">Choose two saved experiments.</div></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="kvSizeView" class="workspace-view kv-size-view" role="tabpanel" aria-labelledby="kvSizeNav" hidden>
+        <div class="view-intro">
+          <div>
+            <p class="eyebrow">Nominal attention capacity</p>
+            <h2>KV cache size calculator</h2>
+            <p>Inspect exact component, formula and calculation-layer capacity for every active model.</p>
+          </div>
+          <span id="kvCatalogBadge" class="local-badge">Local model catalog</span>
+        </div>
+
+        <section id="kvCompareTray" class="decision-card kv-compare-tray" aria-label="Saved comparison configurations" hidden>
+          <div class="panel-heading">
+            <div><span class="panel-label">Ready to compare</span><h2 id="kvCompareCount">0 / 4 configurations</h2></div>
+            <div class="kv-compare-actions"><button id="kvClearCompare" type="button">Clear</button><button id="kvRunCompare" type="button" class="primary" disabled>Compare</button></div>
+          </div>
+          <div id="kvCompareCards" class="kv-compare-cards"></div>
+        </section>
+        <p id="kvCompareStatus" class="kv-compare-status" role="status" aria-live="polite" aria-atomic="true"></p>
+
+        <div id="kvCalculator" class="kv-size-grid">
+          <aside class="decision-card kv-control-card" aria-label="KV size calculator controls">
+            <div class="panel-heading">
+              <div><span class="panel-label">Parameters</span><h2>Capacity inputs</h2><p>Model defaults load automatically; changes recalculate immediately.</p></div>
+              <button id="kvAddCompare" type="button" aria-describedby="kvAddCompareReason">Add to compare</button>
+            </div>
+            <p id="kvAddCompareReason" class="boundary-note" hidden></p>
+            <div class="kv-control-grid">
+              <label>Model family<select id="kvFamily"></select></label>
+              <label>Model<select id="kvModel"></select></label>
+              <label>Tokens per sequence<input id="kvTokens" type="text" inputmode="numeric" value="1024" spellcheck="false"></label>
+              <label>Sequences<input id="kvSequences" type="text" inputmode="numeric" value="1" spellcheck="false"></label>
+              <label>KV precision<select id="kvPrecision"></select></label>
+              <label id="kvIndexerPrecisionField">Indexer precision<select id="kvIndexerPrecision"></select><small>Fixed models keep this selector locked.</small></label>
+            </div>
+
+            <div class="kv-option-stack">
+              <label id="kvIncludeDraftField" class="checkbox-line"><input id="kvIncludeDraft" type="checkbox"> Include draft / MTP cache</label>
+              <label id="kvIncludeStateField" class="checkbox-line"><input id="kvIncludeState" type="checkbox"> Include attention state</label>
+            </div>
+            <div class="kv-control-grid">
+              <label id="kvEncoderTailField" hidden>Encoder tail output<select id="kvEncoderTailPolicy"><option value="recompute">Recompute when missing</option><option value="retain">Retain and reuse</option></select></label>
+              <label id="kvCheckpointModeField">State checkpoint policy<select id="kvCheckpointMode"><option value="prompt_end">Prompt-end snapshot</option><option value="fixed">Fixed interval</option></select></label>
+              <label id="kvCheckpointIntervalField">Checkpoint interval<input id="kvCheckpointInterval" type="text" inputmode="numeric" value="2048" spellcheck="false"></label>
+            </div>
+
+            <details class="kv-advanced-disclosure">
+              <summary><span><strong>Advanced parameters</strong><small>Edit fields used by the selected formula</small></span></summary>
+              <div id="kvAdvancedFields" class="kv-advanced-grid"></div>
+              <button id="kvResetDefaults" type="button">Restore model defaults</button>
+            </details>
+            <p id="kvContextWarning" class="boundary-note kv-context-warning" role="status" hidden></p>
+          </aside>
+
+          <main class="kv-results" aria-live="polite">
+            <section id="kvError" class="result-state-banner kv-error" role="alert" hidden></section>
+            <div id="kvResultContent">
+              <section class="decision-card kv-total-card">
+                <div class="kv-total-heading">
+                  <div><span class="panel-label">Total nominal cache</span><h2 id="kvTotalBinary">—</h2><p id="kvTotalDecimal">—</p></div>
+                  <div class="kv-badges"><span id="kvFormulaBadge"></span><span id="kvSemanticBadge"></span></div>
+                </div>
+                <p id="kvTotalBytes" class="kv-exact-bytes">—</p>
+                <p id="kvCapacityScope" class="boundary-note" hidden></p>
+                <div class="kv-rate-grid">
+                  <div><span>Per token / sequence</span><strong id="kvPerToken">—</strong></div>
+                  <div><span>Per sequence</span><strong id="kvPerSequence">—</strong></div>
+                </div>
+              </section>
+
+              <section class="decision-card kv-section-card">
+                <div class="panel-heading"><div><span class="panel-label">Breakdown</span><h2>Cache components</h2><p>Every component is calculated independently before the exact total.</p></div></div>
+                <div id="kvComponentGrid" class="kv-component-grid"></div>
+              </section>
+
+              <section class="decision-card kv-section-card">
+                <div class="panel-heading"><div><span class="panel-label">Equations</span><h2>Formula and substitutions</h2><p>Symbols use the effective values shown in the controls and model parameters.</p></div></div>
+                <div id="kvFormulaList" class="kv-formula-list"></div>
+              </section>
+
+              <section class="decision-card kv-section-card">
+                <details open>
+                  <summary><span><strong>Model parameters</strong><small>All calculator and attention facts supplied by the catalog</small></span></summary>
+                  <dl id="kvModelFacts" class="kv-fact-grid"></dl>
+                </details>
+              </section>
+
+              <section class="decision-card kv-section-card kv-layer-card">
+                <details>
+                  <summary><span><strong>Calculation-layer breakdown</strong><small id="kvLayerCount">0 calculation layers</small></span></summary>
+                  <p class="kv-layer-note">Calculation layers expand the capacity equation; they do not claim the exact decoder-layer ordering or implementation type.</p>
+                  <div class="kv-table-scroll">
+                    <table class="kv-layer-table">
+                      <thead><tr><th>Layer</th><th>Calculation type</th><th>Effective tokens/state</th><th>Ratio</th><th>Components</th><th>Total</th></tr></thead>
+                      <tbody id="kvLayerBody"></tbody>
+                    </table>
+                  </div>
+                </details>
+              </section>
+            </div>
+          </main>
+        </div>
+        <section id="kvCompareView" class="kv-compare-view" aria-labelledby="kvCompareHeading" hidden>
+          <section class="decision-card kv-compare-chart-card">
+            <div class="panel-heading">
+              <div><span class="panel-label">Nominal attention capacity</span><h2 id="kvCompareHeading" tabindex="-1">Configuration comparison</h2><p>Saved configurations · shared linear capacity scale</p></div>
+              <button id="kvBackCalculator" type="button">Back to calculator</button>
+            </div>
+            <div id="kvCompareChart"></div>
+          </section>
+          <section class="decision-card kv-section-card">
+            <div class="panel-heading"><div><span class="panel-label">Side by side</span><h2>Settings and capacity</h2><p>Average per token is evaluated at the saved length. —: not applicable; Off: excluded; 0 B: applicable with zero capacity.</p></div></div>
+            <div id="kvCompareTables"></div>
+          </section>
+          <section class="decision-card kv-section-card">
+            <details><summary><span><strong>Model and advanced parameters</strong><small>Complete saved parameters; differences are highlighted</small></span></summary><div id="kvCompareAdvanced"></div></details>
+          </section>
+          <section class="decision-card kv-section-card">
+            <div class="panel-heading"><div><span class="panel-label">Reading the results</span><h2>Capacity scope and notes</h2><p>Known buffer reservations are shown separately from effective payload and are never added to the total.</p></div></div>
+            <div id="kvCompareNotes" class="kv-compare-notes"></div>
+          </section>
+        </section>
+      </section>
+      <section id="architectureView" class="workspace-view architecture-view" role="tabpanel" aria-labelledby="architectureNav" hidden>
+        <iframe id="architectureFrame" title="PCS 技术架构" data-src="/architecture/pcs_architecture.html" allow="fullscreen; clipboard-write" allowfullscreen></iframe>
+      </section>
+    </div>
+    <div id="chartTooltip" class="chart-tooltip" role="tooltip" hidden></div>
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

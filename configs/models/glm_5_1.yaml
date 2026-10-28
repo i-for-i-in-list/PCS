@@ -1,0 +1,208 @@
+model_config_schema_version: 2
+name: glm-5.1
+identity:
+  id: glm-5.1
+  display_name: GLM-5.1
+  family: GLM
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 6144
+num_layers: 78
+num_q_heads: 64
+num_kv_heads: 64
+max_context_tokens: 202752
+draft_support: exact
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: dsa
+    q_lora_rank: 2048
+    kv_lora_rank: 512
+    qk_nope_head_dim: 192
+    qk_rope_head_dim: 64
+    v_head_dim: 256
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 12288
+        layer_count: 3
+        gated: true
+        activation: silu
+      - type: moe
+        n_experts: 256
+        experts_per_token: 8
+        expert_intermediate_size: 2048
+        layer_count: 75
+        router_included: true
+        shared_experts: 1
+        shared_intermediate_size: 2048
+        shared_input_dim: 6144
+        activation: silu
+        router_activation: sigmoid
+        normalize_topk_weights: true
+        router_group_count: 1
+        router_score_bias: true
+        router_group_top2: true
+        router_sum_epsilon: true
+        router_weight_scale: true
+        router_activation_on_selected: false
+        routed_output_scale: false
+    window_size: 2048
+    global_tokens: 128
+    index_n_heads: 32
+    index_head_dim: 128
+    index_topk: 2048
+    indexer_compute_layers: 78
+    index_projections: true
+    index_q_input_dim: 2048
+    index_k_input_dim: 6144
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 6144
+        rows_per_token: 1
+        layers: 156
+        affine: true
+      - kind: rms
+        width: 2048
+        rows_per_token: 1
+        layers: 78
+        affine: true
+      - kind: rms
+        width: 512
+        rows_per_token: 1
+        layers: 78
+        affine: true
+      - kind: layer
+        width: 128
+        rows_per_token: 1
+        layers: 78
+        affine: true
+        bias: true
+      rope:
+      - dim: 64
+        heads: 65
+        layers: 78
+      - dim: 64
+        heads: 33
+        layers: 78
+      bias: []
+      elementwise:
+      - width: 6144
+        layers: 156
+        rows_per_token: 1
+      - width: 32
+        layers: 78
+        rows_per_token: 1
+      omissions: []
+    index_score_scale: true
+    index_hadamard: false
+  output_head_spec:
+    vocab_size: 154880
+    final_norm:
+      kind: rms
+      width: 6144
+      affine: true
+attention:
+  type: dsa
+  latent_dim: 512
+  rope_key_dim: 64
+  index_key_dim: 128
+  latent_dtype_bits: 16
+  rope_key_dtype_bits: 16
+  index_dtype_bits: 16
+  index_topk: 2048
+  indexer_layer_count: 78
+  read_mode: full_restore
+  block_mapping: window_global
+  window_size: 2048
+  global_tokens: 128
+  sparse_access_policy:
+    restore_mode: full_restore
+    locality_scenario: window_global
+    reuse_scope: request_union
+    storage_layout: all_kv_heads_together
+    query_granularity_tokens: 64
+    seed: 0
+calculator_reference:
+  formula_id: dsa_mla
+  semantic_class: hybrid
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 78
+    kv_lora_rank: 512
+    qk_nope_head_dim: 192
+    qk_rope_head_dim: 64
+    qk_head_dim: 256
+    v_head_dim: 256
+    num_key_value_heads: 64
+    index_head_dim: 128
+    index_n_heads: 32
+    index_topk: 2048
+    num_nextn_predict_layers: 1
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#dsa_mla
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#dsa_mla
+    - https://huggingface.co/zai-org/GLM-5.1/resolve/26e1bd6e011feb778d25ae34b09b07074139d92d/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#dsa_mla
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/zai-org/GLM-5.1/resolve/26e1bd6e011feb778d25ae34b09b07074139d92d/config.json
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/glm_moe_dsa/configuration_glm_moe_dsa.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/glm-5.1.json'
+  sparse_routing:
+    status: synthetic_scenario
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#dsa_mla
+    notes:
+    - The BF16 reference runtime uses full_restore; sparse-on-demand locality is a selectable scenario, not a claim about
+      learned routing.
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: dsa_mla
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: b0456480096ce83c6497644114bff2676288cfef9ad6cf77e5c5fe17171d0eda
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/zai-org/GLM-5.1/resolve/26e1bd6e011feb778d25ae34b09b07074139d92d/config.json
+    revision: 26e1bd6e011feb778d25ae34b09b07074139d92d
+    sha256: 726e45e28d1be1636a5834048a4101a2cfe384819ad2ebe08d41f6fe04656526
+    verification: fetched
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: 50b8e93ca943e7446e520ac24605050687e5f439d098942ea91216f6f92cb942
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/glm_moe_dsa/configuration_glm_moe_dsa.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

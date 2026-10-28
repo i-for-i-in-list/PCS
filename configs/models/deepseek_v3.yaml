@@ -1,0 +1,161 @@
+model_config_schema_version: 2
+name: deepseek-v3
+identity:
+  id: deepseek-v3
+  display_name: DeepSeek V3
+  family: DeepSeek
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 7168
+num_layers: 61
+num_q_heads: 128
+num_kv_heads: 128
+max_context_tokens: 163840
+draft_support: exact
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: mla
+    q_lora_rank: 1536
+    kv_lora_rank: 512
+    qk_nope_head_dim: 128
+    qk_rope_head_dim: 64
+    v_head_dim: 128
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 18432
+        layer_count: 3
+        gated: true
+        activation: silu
+      - type: moe
+        n_experts: 256
+        experts_per_token: 8
+        expert_intermediate_size: 2048
+        layer_count: 58
+        router_included: true
+        shared_experts: 1
+        shared_intermediate_size: 2048
+        shared_input_dim: 7168
+        activation: silu
+        router_activation: sigmoid
+        normalize_topk_weights: true
+        router_group_count: 8
+        router_score_bias: true
+        router_group_top2: true
+        router_sum_epsilon: true
+        router_weight_scale: true
+        router_activation_on_selected: false
+        routed_output_scale: false
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 7168
+        rows_per_token: 1
+        layers: 122
+        affine: true
+      - kind: rms
+        width: 1536
+        rows_per_token: 1
+        layers: 61
+        affine: true
+      - kind: rms
+        width: 512
+        rows_per_token: 1
+        layers: 61
+        affine: true
+      rope:
+      - dim: 64
+        heads: 129
+        layers: 61
+      bias: []
+      elementwise:
+      - width: 7168
+        layers: 122
+        rows_per_token: 1
+      omissions: []
+  output_head_spec:
+    vocab_size: 129280
+    final_norm:
+      kind: rms
+      width: 7168
+      affine: true
+attention:
+  type: mla
+  latent_dim: 512
+  rope_key_dim: 64
+  latent_dtype_bits: 16
+  rope_key_dtype_bits: 16
+calculator_reference:
+  formula_id: mla
+  semantic_class: token_payload
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 61
+    kv_lora_rank: 512
+    qk_nope_head_dim: 128
+    qk_rope_head_dim: 64
+    v_head_dim: 128
+    num_key_value_heads: 128
+    num_nextn_predict_layers: 1
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mla
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mla
+    - https://huggingface.co/deepseek-ai/DeepSeek-V3/resolve/e815299b0bcbac849fa540c768ef21845365c9eb/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mla
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V3/resolve/e815299b0bcbac849fa540c768ef21845365c9eb/config.json
+    - https://huggingface.co/deepseek-ai/DeepSeek-V3/resolve/e815299b0bcbac849fa540c768ef21845365c9eb/modeling_deepseek.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/deepseek-v3.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: mla
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 96f2f3cee30cafdb40789d5c522895eb2293d3150b7a9f8517659680c1c345aa
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V3/resolve/e815299b0bcbac849fa540c768ef21845365c9eb/config.json
+    revision: e815299b0bcbac849fa540c768ef21845365c9eb
+    sha256: cbf0b95dc614de208a109bb5fd4e7eed11385e9c68411d2c17db5319443035d9
+    verification: fetched
+  official_code:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V3/resolve/e815299b0bcbac849fa540c768ef21845365c9eb/modeling_deepseek.py
+    revision: e815299b0bcbac849fa540c768ef21845365c9eb
+    sha256: eb6d535742061cf9da7a4232ecfe2f089d5ce20080afc5d2181e9d70ec4af8a4
+    verification: fetched
+    additional_sources: []
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

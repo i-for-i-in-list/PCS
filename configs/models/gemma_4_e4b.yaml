@@ -1,0 +1,209 @@
+model_config_schema_version: 2
+name: gemma-4-e4b
+identity:
+  id: gemma-4-e4b
+  display_name: Gemma 4 E4B
+  family: Gemma
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 2560
+num_layers: 42
+num_q_heads: 8
+num_kv_heads: 2
+max_context_tokens: 131072
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: mixed_full_sliding_gqa
+    full_attention_layers: 7
+    sliding_attention_layers: 35
+    sliding_window: 512
+    full_key_head_dim: 512
+    full_value_head_dim: 512
+    sliding_key_head_dim: 256
+    sliding_value_head_dim: 256
+    full_num_kv_heads: 2
+    sliding_num_kv_heads: 2
+    sliding_num_q_heads: 8
+    ffn:
+      type: dense
+      intermediate_size: 10240
+      layer_count: 42
+      gated: true
+      activation: gelu_pytorch_tanh
+    full_kv_projection_layers: 4
+    sliding_kv_projection_layers: 20
+    full_key_equals_value: false
+    per_layer_input_dim: 256
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 2560
+        rows_per_token: 1
+        layers: 168
+        affine: true
+      - kind: rms
+        width: 512
+        rows_per_token: 8
+        layers: 7
+        affine: true
+      - kind: rms
+        width: 512
+        rows_per_token: 2
+        layers: 4
+        affine: true
+      - kind: rms
+        width: 512
+        rows_per_token: 2
+        layers: 4
+        affine: false
+      - kind: rms
+        width: 256
+        rows_per_token: 8
+        layers: 35
+        affine: true
+      - kind: rms
+        width: 256
+        rows_per_token: 2
+        layers: 20
+        affine: true
+      - kind: rms
+        width: 256
+        rows_per_token: 2
+        layers: 20
+        affine: false
+      - kind: rms
+        width: 256
+        rows_per_token: 1
+        layers: 42
+        affine: true
+      - kind: rms
+        width: 2560
+        rows_per_token: 1
+        layers: 42
+        affine: true
+      rope:
+      - dim: 128
+        heads: 64
+        layers: 1
+      - dim: 256
+        heads: 320
+        layers: 1
+      bias: []
+      elementwise:
+      - width: 2560
+        layers: 126
+        rows_per_token: 1
+      - width: 2560
+        layers: 1
+        rows_per_token: 1
+      - width: 2560
+        layers: 42
+        rows_per_token: 1
+      - width: 256
+        layers: 210
+        rows_per_token: 1
+      omissions: []
+  output_head_spec:
+    vocab_size: 262144
+    final_norm:
+      kind: rms
+      width: 2560
+      affine: true
+attention:
+  type: mixed_full_swa
+  full_attention_layers: 4
+  sliding_attention_layers: 20
+  sliding_window: 512
+  key_head_dim: 256
+  value_head_dim: 256
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+  full_num_kv_heads: 2
+  sliding_num_kv_heads: 2
+  full_key_head_dim: 512
+  full_value_head_dim: 512
+  sliding_key_head_dim: 256
+  sliding_value_head_dim: 256
+  sliding_persistence:
+    storage_form: token_history
+    interval_tokens: null
+    retain_prompt_end: false
+calculator_reference:
+  formula_id: mixed_full_sliding_gqa
+  semantic_class: resident_window
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 42
+    stored_layers: 24
+    num_kv_shared_layers: 18
+    full_attention_layers: 4
+    sliding_attention_layers: 20
+    num_attention_heads: 8
+    num_key_value_heads: 2
+    head_dim: 256
+    global_head_dim: 512
+    sliding_window: 512
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    - https://huggingface.co/google/gemma-4-E4B/resolve/411aa17b749aa952df1359d2dcea73917a544d9a/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/google/gemma-4-E4B/resolve/411aa17b749aa952df1359d2dcea73917a544d9a/config.json
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/gemma4/modeling_gemma4.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/gemma4/configuration_gemma4.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/gemma-4-e4b.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: mixed_full_sliding_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: d3c95e4f73a5c13b74dceac24f1b3372cb83e9c06dd8eab9c728d56dce866f84
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/google/gemma-4-E4B/resolve/411aa17b749aa952df1359d2dcea73917a544d9a/config.json
+    revision: 411aa17b749aa952df1359d2dcea73917a544d9a
+    sha256: f27a045f32c39fb9cd930204920de6b0962810cf09929a8810901ffaec780f20
+    verification: fetched
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/gemma4/modeling_gemma4.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: 8c8ee26ac3e003dd7bea51c7d74df4fd0d25efa57740cbe7c8c68be8c5577c14
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/gemma4/configuration_gemma4.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

@@ -1,0 +1,116 @@
+model_config_schema_version: 2
+name: cohere-command-r-v01
+identity:
+  id: cohere-command-r-v01
+  display_name: Cohere Command R v01
+  family: Cohere
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 8192
+num_layers: 40
+num_q_heads: 64
+num_kv_heads: 64
+max_context_tokens: 131072
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: mha
+    ffn:
+      type: dense
+      intermediate_size: 22528
+      layer_count: 40
+      gated: true
+      activation: unknown
+    scalar_profile:
+      norms: []
+      rope: []
+      bias: []
+      omissions:
+      - Official fixed-revision config returns HTTP 401; public model card does not establish all matrix dimensions
+      - FFN activation and normalization remain scenario assumptions
+attention:
+  type: mha
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+calculator_reference:
+  formula_id: standard_gqa
+  semantic_class: token_payload
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 40
+    num_attention_heads: 64
+    num_key_value_heads: 64
+    head_dim: 128
+    model_max_length: 131072
+    config_max_position_embeddings: 8192
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    - https://huggingface.co/CohereLabs/c4ai-command-r-v01/resolve/760ddb6c203d87ebdbe3c9785b49570e1bf95585/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: assumed
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    - https://huggingface.co/mlx-community/c4ai-command-r-v01-4bit/resolve/ffa5be21a2cb3fbcd0f3cedc0a60ada8fae98c73/config.json
+    - https://huggingface.co/andrewcanis/c4ai-command-r-v01-8bit/resolve/059920f38c48559369a6da2a7682fd4a730d0894/config.json
+    assumptions:
+    - field: d_model
+      value: 8192
+      rationale: Official config content was gated; use the published attention projection width as an analytical scenario.
+      sensitivity: reported FLOPs scale linearly with this field
+    geometry_status: explicit_scenario
+    operator_coverage: partial
+    math_oracle_status: ffn_width_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/cohere-command-r-v01.json'
+    - Only FFN intermediate_size is cross-checked against pinned public derivatives; this is not original gated checkpoint
+      verification or complete operator coverage.
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: standard_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 1af5d46163392ea7f7a43ace8ba785fa6099c3bb1fb07bcca3664f2b32fd8b82
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/CohereLabs/c4ai-command-r-v01/resolve/760ddb6c203d87ebdbe3c9785b49570e1bf95585/config.json
+    revision: 760ddb6c203d87ebdbe3c9785b49570e1bf95585
+    sha256: null
+    verification: revision_only
+    calculator_record_sha256: 1af5d46163392ea7f7a43ace8ba785fa6099c3bb1fb07bcca3664f2b32fd8b82
+    note: The immutable repository revision is pinned, but gated config content was not available for hashing.
+  official_code:
+    url: null
+    revision: not_collected
+    sha256: null
+    verification: not_collected

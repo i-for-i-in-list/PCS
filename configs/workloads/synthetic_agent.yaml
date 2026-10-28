@@ -1,0 +1,10 @@
+request_count: 1000
+qps: 50.0
+seq_len: 32768
+generation_len: 1024
+prefix_ratio: 0.8
+prefix_group_count: 200
+prefix_zipf_alpha: 1.1
+workload_shape: shared_prefix_groups
+arrival_model: fixed
+seed: 1

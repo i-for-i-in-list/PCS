@@ -1,0 +1,35 @@
+runtime_config_schema_version: 2
+name: bf16_reference
+hardware:
+  timing_mode: normalized_reference
+  effective_tflops:
+    default: 2000
+  # v1 compatibility; effective_tflops.default is authoritative in schema v2.
+  effective_prefill_tflops: 2000
+cache_precision:
+  format: bf16
+  default_dtype_bits: 16
+  serialization: exact
+  evidence:
+    status: analytical
+    note: BF16 uses exactly two payload bytes per scalar; allocator reservation is reported separately.
+sparse_access_policy:
+  restore_mode: full_restore
+  locality_scenario: window_global
+  reuse_scope: request_union
+  storage_layout: all_kv_heads_together
+  query_granularity_tokens: 64
+  seed: 0
+decode_write_schedule:
+  mode: burst_at_completion
+  step_us_per_token: null
+  timing_validation: uncalibrated_burst_scenario
+analysis:
+  block_size_tokens: 64
+  max_io_bytes: null
+  peak_windows_us:
+    - 1000
+    - 10000
+    - 100000
+    - 1000000
+  write_miss_blocks: true

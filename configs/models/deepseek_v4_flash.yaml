@@ -1,0 +1,213 @@
+name: deepseek-v4-flash
+d_model: 4096
+num_layers: 43
+num_q_heads: 64
+num_kv_heads: 1
+max_context_tokens: 1048576
+compute:
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: deepseek_v4
+    head_dim: 512
+    rope_head_dim: 64
+    q_lora_rank: 1024
+    o_lora_rank: 1024
+    o_groups: 8
+    index_n_heads: 64
+    index_head_dim: 128
+    index_topk: 512
+    n_routed_experts: 256
+    experts_per_token: 6
+    n_shared_experts: 1
+    expert_intermediate_size: 2048
+    hash_routing_layers: 3
+    mhc_multiplier: 4
+    sliding_window: 128
+attention:
+  type: deepseek_v4
+  variant: flash
+  native_block_size_tokens: 256
+  sliding_window: 128
+  main_nope_elements: 448
+  main_rope_elements: 64
+  main_scale_bytes: 7
+  main_padding_bytes: 1
+  main_entry_bytes: 584
+  indexer_elements: 128
+  indexer_entry_bytes: 66
+  index_topk: 512
+  swa_persistence:
+    storage_form: snapshot
+    interval_tokens: 2048
+    retain_prompt_end: false
+  compress_ratios:
+  - 0
+  - 0
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+  - 128
+  - 4
+model_config_schema_version: 2
+identity:
+  id: deepseek-v4-flash
+  display_name: DeepSeek V4 Flash
+  family: DeepSeek
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+draft_support: exact
+calculator_reference:
+  formula_id: deepseek_v4_hybrid
+  semantic_class: hybrid
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 43
+    head_dim: 512
+    sliding_window: 128
+    index_head_dim: 128
+    index_topk: 512
+    num_key_value_heads: 1
+    compress_ratios:
+    - 0
+    - 0
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 128
+    - 4
+    - 0
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#deepseek_v4_hybrid
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#deepseek_v4_hybrid
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/config.json
+  prefix_serialization:
+    status: derived_from_official_code
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/config.json
+    notes: []
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/config.json
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/model.py
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/kernel.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_logical_operator_ledger
+    math_oracle_status: independent_operator_oracles
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/deepseek-v4-flash.json'
+  sparse_routing:
+    status: synthetic_scenario
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#deepseek_v4_hybrid
+    notes:
+    - The BF16 reference runtime uses full_restore; sparse-on-demand locality is a selectable scenario, not a claim about
+      learned routing.
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: deepseek_v4_hybrid
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 90648551be0cf7bf190ee023138e0a698e728aab460c4d31a690269ac09357a0
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/config.json
+    revision: 60d8d70770c6776ff598c94bb586a859a38244f1
+    sha256: b628e63398a645abc711d92207f8737dd8140f7a4ef1e0a5b3616019e0ddd818
+    verification: fetched
+  official_code:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/model.py
+    revision: 60d8d70770c6776ff598c94bb586a859a38244f1
+    sha256: ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71
+    verification: fetched
+    additional_sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/kernel.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

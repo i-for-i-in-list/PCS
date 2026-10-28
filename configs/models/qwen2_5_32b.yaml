@@ -1,0 +1,130 @@
+model_config_schema_version: 2
+name: qwen2.5-32b
+identity:
+  id: qwen2.5-32b
+  display_name: Qwen2.5-32B
+  family: Qwen2.5
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 5120
+num_layers: 64
+num_q_heads: 40
+num_kv_heads: 8
+max_context_tokens: 32768
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: gqa
+    ffn:
+      type: dense
+      intermediate_size: 27648
+      layer_count: 64
+      gated: true
+      activation: silu
+    query_gate: false
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 5120
+        rows_per_token: 1
+        layers: 128
+        affine: true
+      rope:
+      - dim: 128
+        heads: 48
+        layers: 64
+      bias:
+      - width: 7168
+        layers: 64
+      elementwise:
+      - width: 5120
+        layers: 128
+        rows_per_token: 1
+      omissions: []
+  output_head_spec:
+    vocab_size: 152064
+    final_norm:
+      kind: rms
+      width: 5120
+      affine: true
+attention:
+  type: gqa
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+calculator_reference:
+  formula_id: standard_gqa
+  semantic_class: token_payload
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 64
+    num_attention_heads: 40
+    num_key_value_heads: 8
+    head_dim: 128
+    sliding_window: 131072
+    use_sliding_window: false
+    max_window_layers: 70
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    - https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/resolve/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/resolve/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd/config.json
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/qwen2/modeling_qwen2.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/qwen2/configuration_qwen2.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/qwen2.5-32b.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: standard_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: a41fd911a84842704de3bf30c3ec8009e0a5f2b9f6651ebf475e6c01574b0cb8
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/resolve/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd/config.json
+    revision: 5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd
+    sha256: 9c6772f138ef9e5b3d1c18f2c87e451bbc01f5f1a4eabb36f9bf4f53829b903e
+    verification: fetched
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/qwen2/modeling_qwen2.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: 1ca484d22356b2efd13ce03faaad818a5fe95d6b374a2192a90709d87b0ec463
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/qwen2/configuration_qwen2.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

@@ -1,0 +1,213 @@
+model_config_schema_version: 2
+name: minimax-m3
+identity:
+  id: minimax-m3
+  display_name: MiniMax M3
+  family: MiniMax
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 6144
+num_layers: 60
+num_q_heads: 64
+num_kv_heads: 4
+max_context_tokens: 1048576
+draft_support: unsupported
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: minimax_msa
+    full_attention_layers: 3
+    sparse_attention_layers: 57
+    key_head_dim: 128
+    value_head_dim: 128
+    index_n_heads: 4
+    index_head_dim: 128
+    index_topk_blocks: 16
+    index_block_size: 128
+    local_blocks: 1
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 12288
+        layer_count: 3
+        gated: true
+        activation: swigluoai
+        activation_parameters:
+          alpha: 1.702
+          limit: 7.0
+      - type: moe
+        n_experts: 128
+        experts_per_token: 4
+        expert_intermediate_size: 3072
+        layer_count: 57
+        router_included: true
+        shared_experts: 1
+        shared_intermediate_size: 3072
+        shared_input_dim: 6144
+        activation: swigluoai
+        activation_parameters:
+          alpha: 1.702
+          limit: 7.0
+        router_activation: sigmoid
+        normalize_topk_weights: true
+        router_group_count: 1
+        router_score_bias: true
+        router_group_top2: false
+        router_sum_epsilon: false
+        router_weight_scale: false
+        router_activation_on_selected: false
+        routed_output_scale: true
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 6144
+        rows_per_token: 1
+        layers: 120
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 64
+        layers: 60
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 4
+        layers: 60
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 4
+        layers: 57
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 1
+        layers: 57
+        affine: true
+      rope:
+      - dim: 64
+        heads: 68
+        layers: 60
+      - dim: 64
+        heads: 5
+        layers: 57
+      bias: []
+      elementwise:
+      - width: 6144
+        layers: 120
+        rows_per_token: 1
+      omissions:
+      - MSA eager dense scoring versus sparse-kernel padding must be distinguished from semantic causal pairs
+  output_head_spec:
+    vocab_size: 200064
+    final_norm:
+      kind: rms
+      width: 6144
+      affine: true
+attention:
+  type: minimax_msa
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+  indexer_dim: 128
+  indexer_dtype_bits: 16
+  topk_blocks: 16
+  full_attention_layers: 3
+  sparse_attention_layers: 57
+  sparse_access_policy:
+    restore_mode: full_restore
+    locality_scenario: window_global
+    reuse_scope: request_union
+    storage_layout: all_kv_heads_together
+    query_granularity_tokens: 64
+    seed: 0
+calculator_reference:
+  formula_id: minimax_msa
+  semantic_class: token_payload
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 60
+    full_attention_layers: 3
+    sparse_attention_layers: 57
+    num_attention_heads: 64
+    num_key_value_heads: 4
+    head_dim: 128
+    sparse_attention: true
+    index_head_dim: 128
+    index_n_heads: 4
+    index_block_size: 128
+    index_topk_blocks: 16
+    index_local_blocks: 1
+    indexer_fixed_precision_id: bf16_fp16
+    num_mtp_modules: 7
+    num_nextn_predict_layers: 1
+    disable_draft_kv_cache: true
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#minimax_msa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#minimax_msa
+    - https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/f0e1c1e04d40177e4673a22097036854f536e9c0/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#minimax_msa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/f0e1c1e04d40177e4673a22097036854f536e9c0/config.json
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/minimax_m3_vl/modeling_minimax_m3_vl.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/minimax_m3_vl/configuration_minimax_m3_vl.py
+    - https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/f0e1c1e04d40177e4673a22097036854f536e9c0/configuration_minimax_m3_vl.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/minimax-m3.json'
+  sparse_routing:
+    status: synthetic_scenario
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#minimax_msa
+    notes:
+    - The BF16 reference runtime uses full_restore; sparse-on-demand locality is a selectable scenario, not a claim about
+      learned routing.
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: minimax_msa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 2c07776f1a3fcef1862546db4afd51277d14cb85b8538d2837825a864af18fa2
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/f0e1c1e04d40177e4673a22097036854f536e9c0/config.json
+    revision: f0e1c1e04d40177e4673a22097036854f536e9c0
+    sha256: c9c97ce1e4eece60012d5a10ea87717458bfb1f19c2c7a615a3dbff83d090c6b
+    verification: fetched
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/minimax_m3_vl/modeling_minimax_m3_vl.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: 6c0c869dd7c22a51502c85f9989ea9cae2e9bb8d733825d0b135aaa895eedf44
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/minimax_m3_vl/configuration_minimax_m3_vl.py
+    - https://huggingface.co/MiniMaxAI/MiniMax-M3/resolve/f0e1c1e04d40177e4673a22097036854f536e9c0/configuration_minimax_m3_vl.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

@@ -1,0 +1,121 @@
+model_config_schema_version: 2
+name: llama-3.1-70b
+identity:
+  id: llama-3.1-70b
+  display_name: Llama 3.1 70B
+  family: Llama
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 8192
+num_layers: 80
+num_q_heads: 64
+num_kv_heads: 8
+max_context_tokens: 131072
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: gqa
+    ffn:
+      type: dense
+      intermediate_size: 28672
+      layer_count: 80
+      gated: true
+      activation: silu
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 8192
+        rows_per_token: 1
+        layers: 160
+        affine: true
+      rope:
+      - dim: 128
+        heads: 72
+        layers: 80
+      bias: []
+      elementwise:
+      - width: 8192
+        layers: 160
+        rows_per_token: 1
+      omissions: []
+    query_gate: false
+attention:
+  type: gqa
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+calculator_reference:
+  formula_id: standard_gqa
+  semantic_class: token_payload
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 80
+    num_attention_heads: 64
+    num_key_value_heads: 8
+    head_dim: 128
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    - https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct/resolve/1605565b47bb9346c5515c34102e054115b4f98b/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#standard_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://arxiv.org/html/2407.21783v3#S3.T3
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/llama/modeling_llama.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/llama/configuration_llama.py
+    geometry_status: official_publication_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: published_ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/llama-3.1-70b.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: standard_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: d9d0bbe88fd53506494b5998c6b62c73490cc4d7db19b226ddb097d474d6971c
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct/resolve/1605565b47bb9346c5515c34102e054115b4f98b/config.json
+    revision: 1605565b47bb9346c5515c34102e054115b4f98b
+    sha256: null
+    verification: revision_only
+    calculator_record_sha256: d9d0bbe88fd53506494b5998c6b62c73490cc4d7db19b226ddb097d474d6971c
+    note: The immutable repository revision is pinned, but gated config content was not available for hashing.
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/llama/modeling_llama.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: affc6a4ab36b562a6b4c90b84c4e7939c5417a69ad7bd37e858be5583f189830
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/llama/configuration_llama.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

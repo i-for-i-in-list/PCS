@@ -1,0 +1,17 @@
+name: v4_fp8_mxfp4
+hardware:
+  effective_prefill_tflops: 2000
+cache_precision:
+  main_entry_bytes: 584
+  indexer_entry_bytes: 66
+analysis:
+  block_size_tokens: 256
+  max_io_bytes: null
+  peak_windows_us:
+    - 1000
+    - 10000
+    - 100000
+    - 1000000
+  write_miss_blocks: true
+  swa_cache_policy: periodic
+  swa_checkpoint_interval_tokens: 2048

@@ -1,0 +1,82 @@
+name: deepseek-dsa-sample
+d_model: 7168
+num_layers: 61
+num_q_heads: 128
+num_kv_heads: 128
+compute:
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: dsa
+    q_lora_rank: 1536
+    kv_lora_rank: 512
+    qk_nope_head_dim: 128
+    qk_rope_head_dim: 64
+    v_head_dim: 128
+    window_size: 2048
+    global_tokens: 128
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 18432
+        layer_count: 3
+        gated: true
+        activation: silu
+      - type: moe
+        n_experts: 256
+        experts_per_token: 8
+        expert_intermediate_size: 2048
+        router_included: false
+        shared_experts: 1
+        layer_count: 58
+        activation: silu
+        router_activation: unspecified
+    index_n_heads: 64
+    index_head_dim: 128
+    index_topk: 2048
+    indexer_compute_layers: 61
+    index_projections: true
+    index_q_input_dim: 1536
+    index_k_input_dim: 7168
+    scalar_profile:
+      norms: []
+      rope: []
+      bias: []
+      omissions:
+      - Sample geometry is an explicit scenario, not a certified real model
+attention:
+  type: dsa
+  latent_dim: 512
+  rope_key_dim: 64
+  index_key_dim: 128
+  index_topk: 2048
+  read_mode: sparse_on_demand
+  block_mapping: window_global
+  window_size: 2048
+  global_tokens: 128
+  routing_us_per_query: 10.0
+model_config_schema_version: 2
+identity:
+  id: deepseek-dsa-sample
+  display_name: deepseek-dsa-sample
+  family: legacy-sample
+  aliases: []
+catalog:
+  visible: false
+  legacy_visible: true
+  deprecated_since: 0.4.0
+  replacement_id: deepseek-v3.2
+evidence:
+  compute_formula:
+    status: assumed
+    sources: []
+    assumptions:
+    - field: compute.prefill_formula
+      value: explicit sample geometry
+      rationale: Educational scenario; choose the canonical replacement for a named real model
+    geometry_status: explicit_scenario
+    operator_coverage: partial
+    math_oracle_status: independent_tests_required
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/deepseek-dsa-sample.json'

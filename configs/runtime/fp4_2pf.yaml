@@ -1,0 +1,15 @@
+name: fp4_2pf
+hardware:
+  effective_prefill_tflops: 2000
+cache_precision:
+  format: fp4
+  default_dtype_bits: 4
+analysis:
+  block_size_tokens: 64
+  max_io_bytes: null
+  peak_windows_us:
+    - 1000
+    - 10000
+    - 100000
+    - 1000000
+  write_miss_blocks: true

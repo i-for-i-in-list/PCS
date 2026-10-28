@@ -1,0 +1,19 @@
+runtime_config_schema_version: 2
+name: v41_fp4
+hardware:
+  timing_mode: normalized_reference
+  effective_tflops:
+    default: 2000
+cache_precision:
+  format: fp4
+sparse_access_policy:
+  restore_mode: full_restore
+analysis:
+  block_size_tokens: 64
+  max_io_bytes: null
+  peak_windows_us:
+  - 1000
+  - 10000
+  - 100000
+  - 1000000
+  write_miss_blocks: true

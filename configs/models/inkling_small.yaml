@@ -1,0 +1,221 @@
+model_config_schema_version: 2
+name: inkling-small
+identity:
+  id: inkling-small
+  display_name: Inkling-Small
+  family: Inkling
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 4096
+num_layers: 42
+num_q_heads: 32
+num_kv_heads: 8
+max_context_tokens: 1048576
+draft_support: upper_bound
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: inkling_hybrid
+    full_attention_layers: 7
+    sliding_attention_layers: 35
+    sliding_window: 512
+    hidden_size: 4096
+    full_num_kv_heads: 8
+    full_head_dim: 128
+    sliding_num_kv_heads: 8
+    sliding_head_dim: 128
+    sconv_kernel_size: 4
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 16384
+        layer_count: 2
+        gated: true
+        activation: silu
+      - type: moe
+        n_experts: 256
+        experts_per_token: 6
+        expert_intermediate_size: 2048
+        layer_count: 40
+        router_included: true
+        shared_experts: 2
+        shared_intermediate_size: 2048
+        shared_input_dim: 4096
+        router_output_dim: 258
+        shared_intermediate_weighting: true
+        shared_separate_outputs: true
+        router_normalization: inkling_selected_logsigmoid
+        activation: silu
+        router_activation: sigmoid
+        normalize_topk_weights: false
+        router_group_count: 1
+        router_score_bias: false
+        router_group_top2: false
+        router_sum_epsilon: false
+        router_weight_scale: false
+        router_activation_on_selected: false
+        routed_output_scale: false
+    relative_head_dim: 16
+    relative_extent: 1024
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 4096
+        rows_per_token: 1
+        layers: 84
+        affine: true
+      - kind: rms
+        width: 4096
+        rows_per_token: 1
+        layers: 1
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 32
+        layers: 7
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 8
+        layers: 7
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 32
+        layers: 35
+        affine: true
+      - kind: rms
+        width: 128
+        rows_per_token: 8
+        layers: 35
+        affine: true
+      rope: []
+      bias: []
+      elementwise:
+      - width: 4096
+        layers: 84
+        rows_per_token: 1
+      omissions: []
+    log_scaling_n_floor: 128000
+  output_head_spec:
+    vocab_size: 201024
+    final_norm:
+      kind: rms
+      width: 4096
+      affine: true
+attention:
+  type: inkling
+  global_attention_layers: 7
+  sliding_attention_layers: 35
+  sconv_layers: 42
+  draft_attention_layers: 8
+  include_draft_cache: false
+  sliding_window: 512
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+  global_num_kv_heads: 8
+  sliding_num_kv_heads: 8
+  global_key_head_dim: 128
+  global_value_head_dim: 128
+  sliding_key_head_dim: 128
+  sliding_value_head_dim: 128
+  sconv_state_elements_per_layer: 30720
+  sconv_state_dtype_bits: 16
+  sliding_persistence:
+    storage_form: token_history
+    interval_tokens: null
+    retain_prompt_end: false
+  sconv_persistence:
+    storage_form: snapshot
+    interval_tokens: null
+    retain_prompt_end: true
+calculator_reference:
+  formula_id: inkling_hybrid
+  semantic_class: hybrid
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 42
+    full_attention_layers: 7
+    sliding_attention_layers: 35
+    hidden_size: 4096
+    num_attention_heads: 32
+    num_key_value_heads: 8
+    head_dim: 128
+    swa_num_attention_heads: 32
+    swa_num_key_value_heads: 8
+    swa_head_dim: 128
+    sliding_window: 512
+    sliding_window_size: 512
+    sconv_kernel_size: 4
+    sconv_state_bytes_per_element: 2
+    default_precision_id: bf16_fp16
+    default_include_sconv_state: true
+    default_sconv_checkpoint_interval: infinity
+    num_nextn_predict_layers: 8
+    draft_full_attention_layers: 2
+    draft_sliding_attention_layers: 6
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#inkling_hybrid
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#inkling_hybrid
+    - https://huggingface.co/thinkingmachines/Inkling-Small/resolve/8cc5877b44d343f88b92086aa1fb72897950f06a/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#inkling_hybrid
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/thinkingmachines/Inkling-Small/resolve/8cc5877b44d343f88b92086aa1fb72897950f06a/config.json
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/inkling/modeling_inkling.py
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/inkling/configuration_inkling.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/inkling-small.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: inkling_hybrid
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 07a9c3622eac445ad2e4e5d6d877fed7e788e47ca9f8668609939716cea4b3de
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/thinkingmachines/Inkling-Small/resolve/8cc5877b44d343f88b92086aa1fb72897950f06a/config.json
+    revision: 8cc5877b44d343f88b92086aa1fb72897950f06a
+    sha256: dcb5b1d587bce2f1e6b29833d739a724d05b4bfaa2dc1164fbe679330478ba53
+    verification: fetched
+  official_code:
+    url: https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/inkling/modeling_inkling.py
+    revision: f348d3dcfa9317bed603e01b8ca22b11fe59615c
+    sha256: fc0d3484a8c3660a998b418e965e7a0dc6b39468ef88ab7519e0188d43903fcd
+    verification: fetched
+    additional_sources:
+    - https://raw.githubusercontent.com/huggingface/transformers/f348d3dcfa9317bed603e01b8ca22b11fe59615c/src/transformers/models/inkling/configuration_inkling.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

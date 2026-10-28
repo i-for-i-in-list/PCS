@@ -1,0 +1,213 @@
+model_config_schema_version: 2
+name: deepseek-v4.1-flash
+identity:
+  id: deepseek-v4.1-flash
+  display_name: DeepSeek V4.1 Flash
+  family: DeepSeek
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+d_model: 5120
+num_layers: 40
+num_q_heads: 64
+num_kv_heads: 1
+max_context_tokens: 1048576
+draft_support: cache_only
+attention:
+  type: deepseek_v41
+  compress_ratios:
+  - 0
+  - 0
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 2
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  kv_owner_layer_ids:
+  - 2
+  - 8
+  - 14
+  - 20
+  index_source_layer_ids:
+  - 2
+  - 8
+  - 14
+  - 20
+  - 24
+  - 28
+  - 32
+  - 36
+compute:
+  effective_prefill_tflops: 2000
+  timing_mode: normalized_reference
+  prefill_formula:
+    type: deepseek_v41
+  timing_omissions:
+  - normalization_and_quantization_kernels
+  - topk_selection_and_sorting
+  - kernel_launch_and_communication
+  - engram_host_transfers
+  - encoder_snapshot_copy
+  - vision_encoder
+  - dspark_execution
+calculator_reference:
+  formula_id: deepseek_v41_csa2
+  semantic_class: hybrid
+  default_tokens: 1024
+  fields:
+    num_hidden_layers: 40
+    head_dim: 512
+    index_head_dim: 128
+    index_topk: 512
+    sliding_window: 128
+    compress_ratios:
+    - 0
+    - 0
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 0
+    - 0
+    - 0
+    hc_mult: 4
+    hidden_size: 5120
+    num_nextn_predict_layers: 3
+    kv_owner_layer_ids:
+    - 2
+    - 8
+    - 14
+    - 20
+    indexer_producer_layer_ids:
+    - 2
+    - 8
+    - 14
+    - 20
+    - 24
+    - 28
+    - 32
+    - 36
+    default_precision_id: fp4_int4
+    default_include_attention_state: true
+evidence:
+  calculator_capacity:
+    status: derived_from_official_code
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+    notes: []
+  active_state_layout:
+    status: derived_from_official_code
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+    notes: []
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+    notes: []
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/config.json
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/inference/model.py
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/inference/kernel.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_logical_operator_ledger
+    math_oracle_status: independent_operator_oracles
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/deepseek-v4.1-flash.json'
+  sparse_routing:
+    status: analytical
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash
+    notes: []
+sources:
+  official_config:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/config.json
+    revision: fb2764a5cf321eaa5070ca8f9e892818f477c16d
+    sha256: 8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879
+    verification: fetched
+  notes:
+  - Parameters recorded from the 2026-09-10 reference materials.
+  official_code:
+    url: https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/inference/model.py
+    revision: fb2764a5cf321eaa5070ca8f9e892818f477c16d
+    sha256: 4e9ae23620edc8028ccc5d5fef552ab7fdc7dcd6f79608754fe9f67644056f65
+    verification: fetched
+    additional_sources:
+    - https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/fb2764a5cf321eaa5070ca8f9e892818f477c16d/inference/kernel.py
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prefix-cache-demand"
+version = "0.4.0"
+description = "PCS WebUI runtime: prefix-cache demand and storage analysis"
+requires-python = ">=3.9"
+dependencies = ["PyYAML==6.0.3"]
+
+[tool.setuptools.packages.find]
+include = ["ssu_sim*"]

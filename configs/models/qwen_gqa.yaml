@@ -1,0 +1,53 @@
+name: qwen-gqa-sample
+d_model: 4096
+num_layers: 94
+num_q_heads: 64
+num_kv_heads: 4
+compute:
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: gqa
+    ffn:
+      type: moe
+      n_experts: 128
+      experts_per_token: 8
+      expert_intermediate_size: 1536
+      router_included: false
+      layer_count: 94
+      activation: silu
+      router_activation: unspecified
+    scalar_profile:
+      norms: []
+      rope: []
+      bias: []
+      omissions:
+      - Sample geometry is an explicit scenario, not a certified real model
+attention:
+  type: gqa
+  key_head_dim: 128
+  value_head_dim: 128
+model_config_schema_version: 2
+identity:
+  id: qwen-gqa-sample
+  display_name: qwen-gqa-sample
+  family: legacy-sample
+  aliases: []
+catalog:
+  visible: false
+  legacy_visible: true
+  deprecated_since: 0.4.0
+  replacement_id: qwen3-235b-a22b
+evidence:
+  compute_formula:
+    status: assumed
+    sources: []
+    assumptions:
+    - field: compute.prefill_formula
+      value: explicit sample geometry
+      rationale: Educational scenario; choose the canonical replacement for a named real model
+    geometry_status: explicit_scenario
+    operator_coverage: partial
+    math_oracle_status: independent_tests_required
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/qwen-gqa-sample.json'

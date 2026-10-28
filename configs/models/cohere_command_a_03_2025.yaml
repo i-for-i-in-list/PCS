@@ -1,0 +1,141 @@
+model_config_schema_version: 2
+name: cohere-command-a-03-2025
+identity:
+  id: cohere-command-a-03-2025
+  display_name: Cohere Command A 03-2025
+  family: Cohere
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 12288
+num_layers: 64
+num_q_heads: 96
+num_kv_heads: 8
+max_context_tokens: 131072
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: mixed_full_sliding_gqa
+    full_attention_layers: 16
+    sliding_attention_layers: 48
+    sliding_window: 4096
+    full_key_head_dim: 128
+    full_value_head_dim: 128
+    sliding_key_head_dim: 128
+    sliding_value_head_dim: 128
+    full_num_kv_heads: 8
+    sliding_num_kv_heads: 8
+    sliding_num_q_heads: 96
+    ffn:
+      type: dense
+      intermediate_size: 36864
+      layer_count: 64
+      gated: true
+      activation: unknown
+    scalar_profile:
+      norms: []
+      rope: []
+      bias: []
+      omissions:
+      - Official fixed-revision config returns HTTP 401; public model card does not establish all matrix dimensions
+      - FFN activation and normalization remain scenario assumptions
+attention:
+  type: mixed_full_swa
+  full_attention_layers: 16
+  sliding_attention_layers: 48
+  sliding_window: 4096
+  key_head_dim: 128
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+  full_num_kv_heads: 8
+  sliding_num_kv_heads: 8
+  full_key_head_dim: 128
+  full_value_head_dim: 128
+  sliding_key_head_dim: 128
+  sliding_value_head_dim: 128
+  sliding_persistence:
+    storage_form: token_history
+    interval_tokens: null
+    retain_prompt_end: false
+calculator_reference:
+  formula_id: mixed_full_sliding_gqa
+  semantic_class: resident_window
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 64
+    full_attention_layers: 16
+    sliding_attention_layers: 48
+    num_attention_heads: 96
+    num_key_value_heads: 8
+    head_dim: 128
+    sliding_window: 4096
+    sliding_window_pattern: 4
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    - https://huggingface.co/CohereLabs/c4ai-command-a-03-2025/resolve/066daaa11d57404b07cc650d1068936d31431979/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: assumed
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    - https://huggingface.co/unsloth/c4ai-command-a-03-2025/resolve/26b8ba0749d8c9424ad8f9ab45b5e99356d587ac/config.json
+    - https://huggingface.co/mlx-community/c4ai-command-a-03-2025-bf16/resolve/8eda3c9ce9f5f3a331d7b4b8cbc3e168070c3339/config.json
+    assumptions:
+    - field: d_model
+      value: 12288
+      rationale: Official config content was gated; use the published attention projection width as an analytical scenario.
+      sensitivity: reported FLOPs scale linearly with this field
+    geometry_status: explicit_scenario
+    operator_coverage: partial
+    math_oracle_status: ffn_width_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/cohere-command-a-03-2025.json'
+    - Only FFN intermediate_size is cross-checked against pinned public derivatives; this is not original gated checkpoint
+      verification or complete operator coverage.
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: mixed_full_sliding_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: bba7165343ed055b3f51bed98f8d1b6f4f67f1fd7cbdfa0db4fa5c886c0ec5a9
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/CohereLabs/c4ai-command-a-03-2025/resolve/066daaa11d57404b07cc650d1068936d31431979/config.json
+    revision: 066daaa11d57404b07cc650d1068936d31431979
+    sha256: null
+    verification: revision_only
+    calculator_record_sha256: bba7165343ed055b3f51bed98f8d1b6f4f67f1fd7cbdfa0db4fa5c886c0ec5a9
+    note: The immutable repository revision is pinned, but gated config content was not available for hashing.
+  official_code:
+    url: null
+    revision: not_collected
+    sha256: null
+    verification: not_collected

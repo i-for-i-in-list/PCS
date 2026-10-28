@@ -1,0 +1,6 @@
+name: radix-leaf-lru
+policy: radix_leaf_lru
+total_capacity_bytes: 1099511627776
+shard_count: 1
+placement_seed: 0
+warmup_fraction: 0.0

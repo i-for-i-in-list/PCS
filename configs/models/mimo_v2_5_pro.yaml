@@ -1,0 +1,184 @@
+model_config_schema_version: 2
+name: mimo-v2.5-pro
+identity:
+  id: mimo-v2.5-pro
+  display_name: MiMo-V2.5-Pro
+  family: MiMo
+  aliases: []
+catalog:
+  visible: true
+  legacy_visible: false
+  deprecated_since: null
+  replacement_id: null
+d_model: 6144
+num_layers: 70
+num_q_heads: 128
+num_kv_heads: 8
+max_context_tokens: 1048576
+draft_support: none
+compute:
+  effective_prefill_tflops: 2000
+  scheduler_overhead_us: 0
+  prefill_formula:
+    type: mixed_full_sliding_gqa
+    full_attention_layers: 10
+    sliding_attention_layers: 60
+    sliding_window: 128
+    full_key_head_dim: 192
+    full_value_head_dim: 128
+    sliding_key_head_dim: 192
+    sliding_value_head_dim: 128
+    full_num_kv_heads: 8
+    sliding_num_kv_heads: 8
+    sliding_num_q_heads: 128
+    ffn:
+      type: layered
+      segments:
+      - type: dense
+        intermediate_size: 16384
+        layer_count: 1
+        gated: true
+        activation: silu
+      - type: moe
+        n_experts: 384
+        experts_per_token: 8
+        expert_intermediate_size: 2048
+        layer_count: 69
+        router_included: true
+        shared_experts: 0
+        activation: silu
+        router_activation: sigmoid
+        normalize_topk_weights: true
+        router_group_count: 1
+        router_score_bias: true
+        router_group_top2: true
+        router_sum_epsilon: true
+        router_weight_scale: true
+        router_activation_on_selected: false
+        routed_output_scale: false
+    scalar_profile:
+      norms:
+      - kind: rms
+        width: 6144
+        rows_per_token: 1
+        layers: 140
+        affine: true
+      rope:
+      - dim: 64
+        heads: 136
+        layers: 10
+      - dim: 64
+        heads: 136
+        layers: 60
+      bias: []
+      elementwise:
+      - width: 6144
+        layers: 140
+        rows_per_token: 1
+      - width: 1024
+        layers: 10
+        rows_per_token: 1
+      - width: 1024
+        layers: 60
+        rows_per_token: 1
+      omissions: []
+    full_softmax_sink_entries: 0
+    sliding_softmax_sink_entries: 1
+  output_head_spec:
+    vocab_size: 152576
+    final_norm:
+      kind: rms
+      width: 6144
+      affine: true
+attention:
+  type: mixed_full_swa
+  full_attention_layers: 10
+  sliding_attention_layers: 60
+  sliding_window: 128
+  key_head_dim: 192
+  value_head_dim: 128
+  key_dtype_bits: 16
+  value_dtype_bits: 16
+  full_num_kv_heads: 8
+  sliding_num_kv_heads: 8
+  full_key_head_dim: 192
+  full_value_head_dim: 128
+  sliding_key_head_dim: 192
+  sliding_value_head_dim: 128
+  sliding_persistence:
+    storage_form: token_history
+    interval_tokens: null
+    retain_prompt_end: false
+calculator_reference:
+  formula_id: mixed_full_sliding_gqa
+  semantic_class: resident_window
+  default_tokens: 1024
+  hit_rate_supported: false
+  fields:
+    num_hidden_layers: 70
+    full_attention_layers: 10
+    sliding_attention_layers: 60
+    num_attention_heads: 128
+    num_key_value_heads: 8
+    head_dim: 192
+    v_head_dim: 128
+    swa_num_attention_heads: 128
+    swa_num_key_value_heads: 8
+    swa_head_dim: 192
+    swa_v_head_dim: 128
+    sliding_window: 128
+    sliding_window_size: 128
+evidence:
+  calculator_capacity:
+    status: calculator_reference
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+  active_state_layout:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    - https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/resolve/21d1ecfecd7bd70f31be25ca49d7edd21f003659/config.json
+  prefix_serialization:
+    status: analytical
+    sources:
+    - https://github.com/kvcache-ai/kvcache-blog/blob/a08856d9ec99a0b362edee8809e886741e95567e/assets/js/kv-cache-calculator.js#mixed_full_sliding_gqa
+    notes:
+    - BF16 is byte-exact; sub-byte runtime layouts remain nominal packed scenarios unless a component fixes serialization.
+  compute_formula:
+    status: analytical
+    sources:
+    - https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/resolve/21d1ecfecd7bd70f31be25ca49d7edd21f003659/config.json
+    - https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/resolve/21d1ecfecd7bd70f31be25ca49d7edd21f003659/modeling_mimo_v2.py
+    geometry_status: official_config_verified
+    operator_coverage: reviewed_matrix_shapes
+    math_oracle_status: ffn_matrix_oracle
+    notes:
+    - Config hashes establish source identity, not complete operator coverage or hardware calibration.
+    - 'Structure and unresolved items: references/model_compute/models/mimo-v2.5-pro.json'
+  sparse_routing:
+    status: unsupported
+    sources: []
+    notes: []
+  timing_calibration:
+    status: uncalibrated
+    sources: []
+sources:
+  calculator:
+    snapshot: references/kvcache_ai/2026-08-07/catalog.snapshot.yaml
+    formula_id: mixed_full_sliding_gqa
+    revision: a08856d9ec99a0b362edee8809e886741e95567e
+    sha256: ad3eeec06fb703fe5da0f4c0a3a6834567685c0ff99f6f2457b351c81ff32c43
+    model_record_sha256: 310ddfbad139b7a0a2f5f4389105cfd8a6af3abe56895724f31ee456fd55bcba
+    url: https://kvcache.ai/tools/kv-cache-size-calculator/
+  official_config:
+    url: https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/resolve/21d1ecfecd7bd70f31be25ca49d7edd21f003659/config.json
+    revision: 21d1ecfecd7bd70f31be25ca49d7edd21f003659
+    sha256: 7e11c6cd358a841d5ac016fc80c030cad14d418ee125e9bde1eb6d0757b635d6
+    verification: fetched
+  official_code:
+    url: https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/resolve/21d1ecfecd7bd70f31be25ca49d7edd21f003659/modeling_mimo_v2.py
+    revision: 21d1ecfecd7bd70f31be25ca49d7edd21f003659
+    sha256: 4d33f4bd84a23c0ada163113dea3f28ecaa130370a9c3ef317d965cb031d1d5a
+    verification: fetched
+    additional_sources: []
+    note: Pinned operator implementation; checkpoint identity and math coverage are tracked separately.
