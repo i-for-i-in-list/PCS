@@ -137,6 +137,7 @@ class _ShardState:
     used_bytes: int = 0
     protected_bytes: int = 0
     attachment_bytes: int = 0
+    node_count: int = 0
     eviction_heap: list[tuple[int, int, _RadixNode]] = field(default_factory=list)
 
 
@@ -270,6 +271,7 @@ class RadixLeafLRUCache:
                     parent=node,
                 )
                 node.children[block_id] = child
+                state.node_count += 1
                 state.used_bytes += block_bytes
                 self._ever_admitted.add(child.path_key)
                 # Preserve one clock tick and last_access assignment per block.
@@ -443,6 +445,9 @@ class RadixLeafLRUCache:
             self._delete_leaf(state, node)
             eviction_count += 1
             eviction_bytes += block_bytes
+        if eviction_count:
+            # The heap can outgrow its limit as the resident tree shrinks.
+            self._maybe_compact_eviction_heap(state)
         return CacheEvictionResult(
             eviction_count=eviction_count,
             eviction_bytes=eviction_bytes,
@@ -466,7 +471,7 @@ class RadixLeafLRUCache:
         return tuple(state.attachment_bytes for state in self._shards)
 
     def assert_consistent(self) -> None:
-        """Raise when tree reachability, byte accounting, or capacity is invalid."""
+        """Raise when tree reachability, accounting, or capacity is invalid."""
 
         for shard, state in enumerate(self._shards):
             visited: set[_RadixNode] = set()
@@ -488,6 +493,10 @@ class RadixLeafLRUCache:
                 if node.lock_ref > 0:
                     protected += node.resident_size_bytes
                 stack.extend(node.children.values())
+            if len(visited) != state.node_count:
+                raise AssertionError(
+                    f"cache node count mismatch: tree={len(visited)}, state={state.node_count}"
+                )
             if total != state.used_bytes:
                 raise AssertionError(
                     f"cache byte accounting mismatch: tree={total}, state={state.used_bytes}"
@@ -539,20 +548,32 @@ class RadixLeafLRUCache:
         if enqueue_leaf and node.leaf and node.lock_ref == 0:
             self._push_leaf(state, node)
 
-    @staticmethod
-    def _push_leaf(state: _ShardState, node: _RadixNode) -> None:
+    def _push_leaf(self, state: _ShardState, node: _RadixNode) -> None:
         heapq.heappush(state.eviction_heap, (node.last_access, node.serial, node))
+        self._maybe_compact_eviction_heap(state)
+
+    @staticmethod
+    def _maybe_compact_eviction_heap(state: _ShardState) -> None:
+        heap = state.eviction_heap
+        size = len(heap)
+        # Leave room for stale entries so rebuilding stays infrequent even
+        # when a small shard repeatedly touches the same leaf.
+        if size <= 64 or size <= 4 * state.node_count:
+            return
+
+        current = {}
+        for entry in heap:
+            access, _serial, node = entry
+            if _is_current_leaf_entry(node, access):
+                current[node] = entry
+        heap[:] = current.values()
+        heapq.heapify(heap)
 
     @staticmethod
     def _pop_evictable_leaf(state: _ShardState) -> _RadixNode | None:
         while state.eviction_heap:
             access, _serial, node = heapq.heappop(state.eviction_heap)
-            if (
-                node.resident
-                and node.leaf
-                and node.lock_ref == 0
-                and node.last_access == access
-            ):
+            if _is_current_leaf_entry(node, access):
                 return node
         return None
 
@@ -564,6 +585,7 @@ class RadixLeafLRUCache:
         removed = parent.children.pop(node.block_id, None)
         if removed is not node:
             raise AssertionError("cache parent does not own the evicted leaf")
+        state.node_count -= 1
         state.used_bytes -= node.resident_size_bytes
         state.attachment_bytes -= node.attachment_bytes
         node.parent = None
@@ -578,6 +600,15 @@ class RadixLeafLRUCache:
         serial = self._serial
         self._serial += 1
         return serial
+
+
+def _is_current_leaf_entry(node: _RadixNode, access: int) -> bool:
+    return (
+        node.last_access == access
+        and node.resident
+        and node.leaf
+        and node.lock_ref == 0
+    )
 
 
 def stable_cache_shard(value: str, shard_count: int, seed: int = 0) -> int:
